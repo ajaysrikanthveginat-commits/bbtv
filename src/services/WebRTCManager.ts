@@ -112,6 +112,19 @@ export class WebRTCManager {
       }
     };
 
+    // Diagnostic only: report ICE server/candidate gathering errors.
+    pc.onicecandidateerror = (event) => {
+      const e = event as any;
+      const message =
+        `[ICE CANDIDATE ERROR] ` +
+        `code=${e.errorCode ?? 'unknown'} ` +
+        `text=${e.errorText ?? 'unknown'} ` +
+        `url=${e.url ?? 'unknown'}`;
+
+      console.warn(message, e);
+      this.callbacks.onLog(message, 'error');
+    };
+
     pc.onconnectionstatechange = () => {
       this.callbacks.onLog(
         `Connection state changed: ${pc.connectionState}`,
@@ -129,11 +142,16 @@ export class WebRTCManager {
     };
 
     pc.oniceconnectionstatechange = () => {
+      const state = pc.iceConnectionState;
+
       this.callbacks.onLog(
-        `ICE connection state: ${pc.iceConnectionState}`,
-        pc.iceConnectionState === 'connected' ? 'success' : 'info'
+        `ICE connection state: ${state}`,
+        state === 'connected' ? 'success' : state === 'failed' ? 'error' : 'info'
       );
-      this.callbacks.onIceConnectionStateChange(pc.iceConnectionState);
+      this.callbacks.onIceConnectionStateChange(state);
+
+      // Diagnostic only. This does not modify ICE/WebRTC behavior.
+      void this.logIceDiagnostics(`ICE state = ${state}`);
     };
 
     pc.onsignalingstatechange = () => {
@@ -250,6 +268,99 @@ export class WebRTCManager {
     }
 
     return pc;
+  }
+
+  /**
+   * Diagnostic-only ICE inspection.
+   *
+   * This intentionally does not change ICE configuration, signaling,
+   * transceivers, tracks, or connection state. It only reads getStats()
+   * so we can determine which candidate types were gathered and whether
+   * Chrome selected a candidate pair.
+   */
+  private async logIceDiagnostics(reason: string): Promise<void> {
+    if (!this.pc) return;
+
+    try {
+      const stats = await this.pc.getStats();
+      const reports = new Map<string, any>();
+
+      stats.forEach((report) => {
+        reports.set(report.id, report);
+      });
+
+      const transport = [...reports.values()].find(
+        (report) => report.type === 'transport'
+      );
+
+      const candidatePairs = [...reports.values()].filter(
+        (report) => report.type === 'candidate-pair'
+      );
+
+      const selectedPairId = transport?.selectedCandidatePairId;
+
+      const relevantPairs = candidatePairs.filter(
+        (pair) =>
+          pair.id === selectedPairId ||
+          pair.selected === true ||
+          pair.state === 'succeeded' ||
+          pair.state === 'failed'
+      );
+
+      const pairMessages: string[] = [];
+
+      for (const pair of relevantPairs) {
+        const localCandidate = pair.localCandidateId
+          ? reports.get(pair.localCandidateId)
+          : undefined;
+
+        const remoteCandidate = pair.remoteCandidateId
+          ? reports.get(pair.remoteCandidateId)
+          : undefined;
+
+        pairMessages.push(
+          [
+            `state=${pair.state ?? 'unknown'}`,
+            `local=${localCandidate?.candidateType ?? 'unknown'}`,
+            `remote=${remoteCandidate?.candidateType ?? 'unknown'}`,
+            `protocol=${localCandidate?.protocol ?? 'unknown'}`,
+            `rtt=${pair.currentRoundTripTime ?? 'n/a'}`
+          ].join(' ')
+        );
+      }
+
+      const localTypes = [
+        ...new Set(
+          [...reports.values()]
+            .filter((report) => report.type === 'local-candidate')
+            .map((report) => report.candidateType)
+            .filter(Boolean)
+        )
+      ];
+
+      const remoteTypes = [
+        ...new Set(
+          [...reports.values()]
+            .filter((report) => report.type === 'remote-candidate')
+            .map((report) => report.candidateType)
+            .filter(Boolean)
+        )
+      ];
+
+      const message =
+        `[ICE DIAGNOSTIC] ${reason} | ` +
+        `transport=${transport?.iceState ?? 'unknown'} ` +
+        `dtls=${transport?.dtlsState ?? 'unknown'} ` +
+        `selectedPair=${selectedPairId ?? 'none'} | ` +
+        `localCandidates=[${localTypes.join(', ') || 'none'}] ` +
+        `remoteCandidates=[${remoteTypes.join(', ') || 'none'}] | ` +
+        `pairs=${pairMessages.join(' || ') || 'none'}`;
+
+      console.log(message);
+      this.callbacks.onLog(message, 'info');
+    } catch (error) {
+      console.warn('[ICE DIAGNOSTIC] getStats failed:', error);
+    }
   }
 
   // SECTION 4: Attach participant/host local tracks to RTCPeerConnection transceivers
