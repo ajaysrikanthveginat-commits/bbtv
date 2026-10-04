@@ -18,7 +18,7 @@ interface ClientSession {
   roomId: string | null;
 }
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const app = express();
 const httpServer = http.createServer(app);
 
