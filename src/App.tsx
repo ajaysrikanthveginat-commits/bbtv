@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { SignalingService } from './services/SignalingService';
 import { WebRTCManager } from './services/WebRTCManager';
 import { DiagnosticsPanel } from './components/DiagnosticsPanel';
@@ -560,22 +560,20 @@ export default function App() {
       const activeRemoteUser = remoteUserIdRef.current || remoteUserId;
       const activeRoom = roomIdRef.current || roomId;
       if (inRoom && activeRemoteUser && activeRoom) {
-        const pc = webrtcRef.current?.getPeerConnection();
-        if (!pc || !pc.remoteDescription) {
-          addLog(`Initiating initial WebRTC offer for remote peer ${activeRemoteUser.slice(0, 8)}...`, 'info');
-          const offer = await webrtcRef.current?.createOffer();
-          if (offer && signalingRef.current) {
-            signalingRef.current.send({
-              type: 'OFFER',
-              roomId: activeRoom,
-              senderId: localUserId,
-              targetId: activeRemoteUser,
-              payload: offer,
-            });
-            addLog('Sent WebRTC OFFER via signaling', 'success');
-          }
-        } else {
-          addLog('Local media tracks attached to active sendrecv transceivers via replaceTrack', 'success');
+        // Always renegotiate: create a fresh SDP offer so both the initial case
+        // (no remoteDescription yet) and the renegotiation case (participant
+        // enables media after the host-initiated handshake is already done) work.
+        addLog(`Sending WebRTC offer to remote peer ${activeRemoteUser.slice(0, 8)}...`, 'info');
+        const offer = await webrtcRef.current?.createOffer();
+        if (offer && signalingRef.current) {
+          signalingRef.current.send({
+            type: 'OFFER',
+            roomId: activeRoom,
+            senderId: localUserId,
+            targetId: activeRemoteUser,
+            payload: offer,
+          });
+          addLog('Sent WebRTC OFFER via signaling', 'success');
         }
       }
     } catch (err: any) {

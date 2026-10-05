@@ -40,7 +40,7 @@ export function RemoteVideo({
       video.muted = true;
 
       // Section 4: Attach stream and ensure decoder binds to video tracks
-      if (video.srcObject !== stream || lastAttachedStreamIdRef.current !== stream.id || (video.videoWidth === 0 && stream.getVideoTracks().length > 0)) {
+      if (video.srcObject !== stream) {
         video.srcObject = stream;
         lastAttachedStreamIdRef.current = stream.id;
       }
@@ -173,7 +173,7 @@ export function RemoteVideo({
       const onTrackAdded = (ev: MediaStreamTrackEvent) => {
         console.log(`[REMOTE STREAM TRACK ADDED] kind=${ev.track.kind} id=${ev.track.id}`);
         if (ev.track.kind === 'video') {
-          if (video.srcObject !== stream || video.videoWidth === 0) {
+          if (video.srcObject !== stream) {
             video.srcObject = stream;
           }
           if (video.paused) {
@@ -202,9 +202,6 @@ export function RemoteVideo({
         if (trk?.kind === 'audio') {
           attemptAudioPlay();
         } else {
-          if (video.videoWidth === 0 && stream.getVideoTracks().length > 0) {
-            video.srcObject = stream;
-          }
           if (video.paused) {
             attemptPlay();
           }

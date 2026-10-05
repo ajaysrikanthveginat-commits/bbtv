@@ -236,6 +236,16 @@ export class WebRTCManager {
         this.callbacks.onLog(`[TRACK ENDED] Remote ${track.kind} track ended: ${track.id.slice(0, 6)}`, 'info');
       };
 
+      // If a new video track arrives (e.g. renegotiation when participant enables camera),
+      // remove stale video tracks so the live camera track is always at index 0
+      if (track.kind === 'video') {
+        this.remoteStream.getVideoTracks().forEach((oldTrack) => {
+          if (oldTrack.id !== track.id) {
+            this.remoteStream.removeTrack(oldTrack);
+          }
+        });
+      }
+
       // Add track to our stable remote MediaStream instance if not already added
       const existingTracks = this.remoteStream.getTracks();
       const alreadyHasTrack = existingTracks.some((t) => t.id === track.id);
