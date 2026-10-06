@@ -20,6 +20,7 @@ interface MediaPlayerStageProps {
   mediaTitle: string;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
+  remoteScreenStream?: MediaStream | null;
   localUserId: string;
   localUserName: string;
   remoteUserId: string | null;
@@ -41,6 +42,7 @@ export function MediaPlayerStage({
   mediaTitle,
   localStream,
   remoteStream,
+  remoteScreenStream = null,
   localUserId,
   localUserName,
   remoteUserId,
@@ -98,7 +100,7 @@ export function MediaPlayerStage({
       {/* If Screen Sharing is active, render the dedicated live screen share stage */}
       {isScreenSharing ? (
         <RemoteScreenShare
-          stream={screenShareOwner === 'local' ? screenStream : remoteStream}
+          stream={screenShareOwner === 'local' ? screenStream : (remoteScreenStream || remoteStream)}
           ownerName={screenShareOwner === 'local' ? 'You' : remoteUserName}
           isLocal={screenShareOwner === 'local'}
           onStopSharing={onStopScreenShare}

@@ -94,6 +94,8 @@ export interface ScreenShareStartedMessage extends BaseSignalingMessage {
   type: 'SCREEN_SHARE_STARTED';
   ownerRole?: UserRole;
   ownerName?: string;
+  screenStreamId?: string;
+  screenTrackId?: string;
 }
 
 export interface ScreenShareStoppedMessage extends BaseSignalingMessage {
