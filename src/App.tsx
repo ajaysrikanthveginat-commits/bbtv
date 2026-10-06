@@ -916,7 +916,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-zinc-100 flex flex-col antialiased selection:bg-[#f4258c]/30 selection:text-[#f4258c]">
+    <div className="min-h-screen bg-[#020306] text-slate-100 flex flex-col antialiased selection:bg-sky-500/20 selection:text-sky-300">
       {/* 1. LANDING PAGE (When not in room) */}
       {!inRoom ? (
         <LandingPage

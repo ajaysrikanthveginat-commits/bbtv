@@ -1,1 +1,80 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --bg-void: #020306;
+    --bg-obsidian: #05070d;
+    --bg-surface: #0a0d16;
+    --accent-sky: #38bdf8;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #020306;
+    color: #f8fafc;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+  }
+}
+
+/* Cinematic reveal animation */
+@keyframes bbtv-cinematic-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cinematic-reveal {
+  animation: bbtv-cinematic-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Luxury subtle scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #020306;
+}
+::-webkit-scrollbar-thumb {
+  background: #181d2a;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #273043;
+}
+
+/* Subtle GPU-only audio visualizer animation */
+@keyframes audio-bar-1 {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(0.9); }
+}
+@keyframes audio-bar-2 {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1.0); }
+}
+@keyframes audio-bar-3 {
+  0%, 100% { transform: scaleY(0.15); }
+  50% { transform: scaleY(0.75); }
+}
+
+.animate-audio-1 { animation: audio-bar-1 1.2s ease-in-out infinite; transform-origin: bottom; }
+.animate-audio-2 { animation: audio-bar-2 0.9s ease-in-out infinite; transform-origin: bottom; }
+.animate-audio-3 { animation: audio-bar-3 1.4s ease-in-out infinite; transform-origin: bottom; }
+
+
+

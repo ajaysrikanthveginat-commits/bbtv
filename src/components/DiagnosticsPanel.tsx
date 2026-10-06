@@ -48,7 +48,7 @@ export function DiagnosticsPanel({
           onClick={() => !isModal && setCollapsed(!collapsed)}
           className="flex items-center gap-2 cursor-pointer flex-1"
         >
-          <Activity className="w-4 h-4 text-[#f4258c]" />
+          <Activity className="w-4 h-4 text-sky-400" />
           <h3 className="text-xs font-bold uppercase tracking-wider text-white">
             Real-Time Diagnostics & WebRTC Engine
           </h3>
@@ -89,10 +89,10 @@ export function DiagnosticsPanel({
       {(!collapsed || isModal) && (
         <div className="p-4 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
           {/* Development Room Diagnostics (Strict Consistency Checker) */}
-          <div className="bg-[#090a0f] p-3 rounded-xl border border-indigo-500/20 space-y-2.5">
+          <div className="bg-[#090a0f] p-3 rounded-xl border border-sky-500/20 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
                 Development Room Diagnostics
               </span>
               <span
@@ -119,11 +119,11 @@ export function DiagnosticsPanel({
               </div>
               <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                 <span className="text-zinc-500 block text-[9px] uppercase tracking-wide">Server Room ID</span>
-                <span className="text-indigo-300 font-bold block">{diagnostics.serverRoomId || diagnostics.roomId || '<NONE>'}</span>
+                <span className="text-sky-300 font-bold block">{diagnostics.serverRoomId || diagnostics.roomId || '<NONE>'}</span>
               </div>
               <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                 <span className="text-zinc-500 block text-[9px] uppercase tracking-wide">WebSocket Room ID</span>
-                <span className="text-purple-300 font-bold block">{diagnostics.wsRoomId || '<NONE>'}</span>
+                <span className="text-sky-400 font-bold block">{diagnostics.wsRoomId || '<NONE>'}</span>
               </div>
               <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                 <span className="text-zinc-500 block text-[9px] uppercase tracking-wide">URL Room ID</span>
@@ -135,7 +135,7 @@ export function DiagnosticsPanel({
               </div>
               <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                 <span className="text-zinc-500 block text-[9px] uppercase tracking-wide">User Role</span>
-                <span className="text-pink-400 font-bold uppercase block">{diagnostics.role}</span>
+                <span className="text-sky-300 font-bold uppercase block">{diagnostics.role}</span>
               </div>
               <div className="bg-black/40 p-2 rounded-lg border border-white/5">
                 <span className="text-zinc-500 block text-[9px] uppercase tracking-wide">WebSocket Status</span>
@@ -157,14 +157,14 @@ export function DiagnosticsPanel({
 
             <div className="bg-[#090a0f] p-2.5 rounded-xl border border-white/5">
               <div className="text-zinc-500 text-[10px] uppercase font-semibold mb-1">Local User (Role)</div>
-              <div className="font-mono text-indigo-300 text-xs truncate">
+              <div className="font-mono text-sky-300 text-xs truncate">
                 {diagnostics.localUserId.slice(0, 8)} ({diagnostics.role.toUpperCase()})
               </div>
             </div>
 
             <div className="bg-[#090a0f] p-2.5 rounded-xl border border-white/5">
               <div className="text-zinc-500 text-[10px] uppercase font-semibold mb-1">Remote Peer ID</div>
-              <div className="font-mono text-[#f4258c] text-xs truncate">
+              <div className="font-mono text-sky-400 text-xs truncate">
                 {diagnostics.remoteUserId ? diagnostics.remoteUserId.slice(0, 8) : 'None'}
               </div>
             </div>
@@ -231,7 +231,7 @@ export function DiagnosticsPanel({
 
             {/* Remote Media Audit */}
             <div className="bg-[#090a0f] p-3 rounded-xl border border-white/5 space-y-2">
-              <div className="text-[#f4258c] font-semibold text-[11px] uppercase flex items-center justify-between">
+              <div className="text-sky-400 font-semibold text-[11px] uppercase flex items-center justify-between">
                 <span>Remote Media Audit</span>
                 <span className="font-mono text-[10px] text-zinc-500">
                   {diagnostics.remoteStreamId ? diagnostics.remoteStreamId.slice(0, 8) + '...' : 'None'}
@@ -293,7 +293,7 @@ export function DiagnosticsPanel({
             </div>
             <div>
               {diagnostics.isScreenSharing ? (
-                <span className="inline-flex items-center gap-1 bg-[#f4258c]/20 text-[#f4258c] border border-[#f4258c]/40 px-2.5 py-1 rounded-lg text-[11px] font-bold animate-pulse">
+                <span className="inline-flex items-center gap-1 bg-sky-500/20 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold animate-pulse">
                   <CheckCircle className="w-3.5 h-3.5" /> BROADCASTING ({diagnostics.screenShareOwner?.toUpperCase()})
                 </span>
               ) : (
