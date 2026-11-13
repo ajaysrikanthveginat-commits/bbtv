@@ -187,7 +187,7 @@ export function RemoteScreenShare({
                   setVolume(Number(e.target.value));
                   setIsMuted(false);
                 }}
-                className="w-14 h-1 bg-zinc-700 rounded-lg accent-[#f4258c] cursor-pointer"
+                className="w-14 h-1 bg-zinc-700 rounded-lg accent-[#8b5cf6] cursor-pointer"
               />
             </div>
           )}
@@ -228,7 +228,7 @@ export function RemoteScreenShare({
         {/* If no stream or video paused */}
         {!stream && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-[#090a0f] text-zinc-400">
-            <Monitor className="w-12 h-12 text-[#f4258c] animate-pulse mb-3" />
+            <Monitor className="w-12 h-12 text-[#8b5cf6] animate-pulse mb-3" />
             <h3 className="text-base font-bold text-white mb-1">Awaiting Screen Feed...</h3>
             <p className="text-xs text-zinc-400 max-w-sm">
               Connecting to live display transmission over WebRTC.
@@ -238,7 +238,7 @@ export function RemoteScreenShare({
       </div>
 
       {/* Bottom Info Bar */}
-      <div className="bg-[#0e1017] border-t border-white/10 px-4 py-2 flex items-center justify-between text-xs text-zinc-400">
+      <div className="bg-[#15121c] border-t border-white/10 px-4 py-2 flex items-center justify-between text-xs text-zinc-400">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400" />
           <span className="font-semibold text-zinc-200">

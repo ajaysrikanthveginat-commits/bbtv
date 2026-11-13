@@ -916,7 +916,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#020306] text-slate-100 flex flex-col antialiased selection:bg-sky-500/20 selection:text-sky-300">
+    <div className="min-h-screen bg-[#0c0b10] text-slate-100 flex flex-col antialiased selection:bg-sky-500/20 selection:text-sky-300">
       {/* 1. LANDING PAGE (When not in room) */}
       {!inRoom ? (
         <LandingPage
@@ -932,7 +932,7 @@ export default function App() {
         />
       ) : (
         /* 2. WATCH ROOM (When in room) */
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="room-shell flex-1 flex flex-col min-h-screen">
           {/* Top Bar */}
           <WatchRoomTopBar
             roomId={roomId}

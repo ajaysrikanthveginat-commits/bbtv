@@ -121,7 +121,7 @@ export function ChangeMediaModal({
             onClick={() => setActiveTab('library')}
             className={`flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'library'
-                ? 'bg-[#f4258c] text-white shadow-md shadow-[#f4258c]/25'
+                ? 'bg-[#8b5cf6] text-white shadow-md shadow-[#8b5cf6]/25'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -133,7 +133,7 @@ export function ChangeMediaModal({
             onClick={() => setActiveTab('screen')}
             className={`flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'screen'
-                ? 'bg-[#f4258c] text-white shadow-md shadow-[#f4258c]/25'
+                ? 'bg-[#8b5cf6] text-white shadow-md shadow-[#8b5cf6]/25'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -148,7 +148,7 @@ export function ChangeMediaModal({
             onClick={() => setActiveTab('local')}
             className={`flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'local'
-                ? 'bg-[#f4258c] text-white shadow-md shadow-[#f4258c]/25'
+                ? 'bg-[#8b5cf6] text-white shadow-md shadow-[#8b5cf6]/25'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -163,7 +163,7 @@ export function ChangeMediaModal({
             onClick={() => setActiveTab('url')}
             className={`flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'url'
-                ? 'bg-[#f4258c] text-white shadow-md shadow-[#f4258c]/25'
+                ? 'bg-[#8b5cf6] text-white shadow-md shadow-[#8b5cf6]/25'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -182,7 +182,7 @@ export function ChangeMediaModal({
             <div className="space-y-4">
               <div className="text-xs text-zinc-400 flex items-center justify-between">
                 <span>Featured Open Movies & Trailers:</span>
-                <span className="text-[#f4258c] font-semibold text-[11px]">
+                <span className="text-[#8b5cf6] font-semibold text-[11px]">
                   Click to select title for stage
                 </span>
               </div>
@@ -196,7 +196,7 @@ export function ChangeMediaModal({
                       onClick={() => handleSelect(movie)}
                       className={`group p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isCurrent
-                          ? 'bg-[#181a26] border-[#f4258c] shadow-lg shadow-[#f4258c]/15 ring-1 ring-[#f4258c]/40'
+                          ? 'bg-[#181a26] border-[#8b5cf6] shadow-lg shadow-[#8b5cf6]/15 ring-1 ring-[#8b5cf6]/40'
                           : 'bg-[#0f1118] border-white/10 hover:border-white/20 hover:bg-[#141622]'
                       }`}
                     >
@@ -214,7 +214,7 @@ export function ChangeMediaModal({
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] uppercase font-bold text-[#f4258c]">
+                            <span className="text-[10px] uppercase font-bold text-[#8b5cf6]">
                               {movie.year}
                             </span>
                             {isCurrent && (
@@ -246,8 +246,8 @@ export function ChangeMediaModal({
 
           {/* TAB 2: SCREEN SHARE */}
           {activeTab === 'screen' && (
-            <div className="py-8 px-4 text-center space-y-4 bg-[#0a0b10] rounded-xl border border-white/5">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f4258c] to-[#a81c60] flex items-center justify-center text-white mx-auto shadow-lg shadow-[#f4258c]/25">
+            <div className="py-8 px-4 text-center space-y-4 bg-[#100e16] rounded-xl border border-white/5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#8b5cf6] to-[#a81c60] flex items-center justify-center text-white mx-auto shadow-lg shadow-[#8b5cf6]/25">
                 <Monitor className="w-7 h-7" />
               </div>
               <div className="space-y-1 max-w-md mx-auto">
@@ -287,7 +287,7 @@ export function ChangeMediaModal({
                         if (onStartScreenShare) onStartScreenShare();
                         onClose();
                       }}
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f4258c] to-[#e01e7e] hover:brightness-110 text-white font-bold text-xs transition-all shadow-lg shadow-[#f4258c]/30 cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:brightness-110 text-white font-bold text-xs transition-all shadow-lg shadow-[#8b5cf6]/30 cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Monitor className="w-4 h-4" />
                       <span>Start Screen Share</span>
@@ -304,7 +304,7 @@ export function ChangeMediaModal({
 
           {/* TAB 3: LOCAL VIDEO (Coming in Phase 3) */}
           {activeTab === 'local' && (
-            <div className="py-12 px-4 text-center space-y-3 bg-[#0a0b10] rounded-xl border border-white/5">
+            <div className="py-12 px-4 text-center space-y-3 bg-[#100e16] rounded-xl border border-white/5">
               <div className="w-12 h-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-500 mx-auto">
                 <Lock className="w-6 h-6 text-zinc-400" />
               </div>
@@ -312,7 +312,7 @@ export function ChangeMediaModal({
               <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
                 Select your own MP4, MKV, or WebM files from your disk to play synchronized across your watch party.
               </p>
-              <div className="inline-block px-3 py-1 rounded-full bg-[#f4258c]/15 text-[#f4258c] text-[11px] font-semibold border border-[#f4258c]/30">
+              <div className="inline-block px-3 py-1 rounded-full bg-[#8b5cf6]/15 text-[#8b5cf6] text-[11px] font-semibold border border-[#8b5cf6]/30">
                 Disabled in Phase 1 Baseline
               </div>
             </div>
@@ -320,7 +320,7 @@ export function ChangeMediaModal({
 
           {/* TAB 4: DIRECT URL (Coming in Phase 4) */}
           {activeTab === 'url' && (
-            <div className="py-12 px-4 text-center space-y-3 bg-[#0a0b10] rounded-xl border border-white/5">
+            <div className="py-12 px-4 text-center space-y-3 bg-[#100e16] rounded-xl border border-white/5">
               <div className="w-12 h-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-500 mx-auto">
                 <Lock className="w-6 h-6 text-zinc-400" />
               </div>
@@ -328,7 +328,7 @@ export function ChangeMediaModal({
               <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
                 Stream public HLS, DASH, or MP4 video URLs directly into the synchronized video player.
               </p>
-              <div className="inline-block px-3 py-1 rounded-full bg-[#f4258c]/15 text-[#f4258c] text-[11px] font-semibold border border-[#f4258c]/30">
+              <div className="inline-block px-3 py-1 rounded-full bg-[#8b5cf6]/15 text-[#8b5cf6] text-[11px] font-semibold border border-[#8b5cf6]/30">
                 Disabled in Phase 1 Baseline
               </div>
             </div>

@@ -302,14 +302,14 @@ export function RemoteVideo({
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${
-              stream ? 'bg-[#f4258c] animate-pulse' : 'bg-zinc-600'
+              stream ? 'bg-[#8b5cf6] animate-pulse' : 'bg-zinc-600'
             }`}
           />
           <span className="font-semibold text-white tracking-wide text-xs">
             {remoteUserId ? userName : 'Friend'}
           </span>
           {remoteUserId && (
-            <span className="text-[#f4258c] font-mono text-[10px] bg-[#f4258c]/10 border border-[#f4258c]/20 px-1.5 py-0.5 rounded">
+            <span className="text-[#8b5cf6] font-mono text-[10px] bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 px-1.5 py-0.5 rounded">
               Peer: {remoteUserId.slice(0, 6)}
             </span>
           )}
@@ -357,7 +357,7 @@ export function RemoteVideo({
             {onInviteClick && (
               <button
                 onClick={onInviteClick}
-                className="mt-1 text-xs font-semibold text-white bg-[#f4258c] hover:bg-[#e01e7e] px-3 py-1.5 rounded-lg transition-all shadow-md shadow-[#f4258c]/20 cursor-pointer"
+                className="mt-1 text-xs font-semibold text-white bg-[#8b5cf6] hover:bg-[#7c3aed] px-3 py-1.5 rounded-lg transition-all shadow-md shadow-[#8b5cf6]/20 cursor-pointer"
               >
                 Invite Friend
               </button>
@@ -377,7 +377,7 @@ export function RemoteVideo({
             </div>
             <button
               onClick={handleEnableAudioGesture}
-              className="flex items-center gap-1.5 bg-[#f4258c] hover:bg-[#e01e7e] text-white font-semibold px-3 py-1 rounded-md text-xs shadow-md shadow-[#f4258c]/25 transition-all cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-semibold px-3 py-1 rounded-md text-xs shadow-md shadow-[#8b5cf6]/25 transition-all cursor-pointer shrink-0"
             >
               <Volume2 className="w-3.5 h-3.5" />
               <span>Enable Audio</span>
@@ -432,14 +432,14 @@ export function RemoteVideo({
 
         {/* Remote Stream ID tag */}
         {stream && (
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] text-[#f4258c] font-mono border border-white/5">
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] text-[#8b5cf6] font-mono border border-white/5">
             Stream: {stream.id.slice(0, 8)}...
           </div>
         )}
       </div>
 
       {/* Footer Details */}
-      <div className="bg-[#0e1017] px-3 py-1.5 border-t border-white/5 text-[10px] text-zinc-500 flex flex-wrap items-center justify-between gap-1">
+      <div className="bg-[#15121c] px-3 py-1.5 border-t border-white/5 text-[10px] text-zinc-500 flex flex-wrap items-center justify-between gap-1">
         <div>
           <span>Tracks: <strong className="text-zinc-300 font-mono">{videoTracks.length}V / {audioTracks.length}A</strong></span>
         </div>

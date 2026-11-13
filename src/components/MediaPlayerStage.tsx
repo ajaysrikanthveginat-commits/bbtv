@@ -114,11 +114,11 @@ export function MediaPlayerStage({
           {/* Top Floating Overlay (Title & Phase 2 Indicator) */}
           <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 via-black/30 to-transparent z-10 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-2 pointer-events-auto">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#f4258c] animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] animate-pulse" />
               <h2 className="text-sm sm:text-base font-bold text-white tracking-wide truncate max-w-md drop-shadow">
                 {mediaTitle}
               </h2>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/60 text-[#f4258c] border border-[#f4258c]/30">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/60 text-[#8b5cf6] border border-[#8b5cf6]/30">
                 Synced Stage
               </span>
             </div>
@@ -127,7 +127,7 @@ export function MediaPlayerStage({
               {isHost && onStartScreenShare && (
                 <button
                   onClick={onStartScreenShare}
-                  className="text-xs font-semibold text-white bg-[#f4258c] hover:bg-[#e01e7e] px-3 py-1.5 rounded-lg shadow-md shadow-[#f4258c]/25 transition-all cursor-pointer flex items-center gap-1.5"
+                  className="text-xs font-semibold text-white bg-[#8b5cf6] hover:bg-[#7c3aed] px-3 py-1.5 rounded-lg shadow-md shadow-[#8b5cf6]/25 transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <Monitor className="w-3.5 h-3.5" />
                   <span>Share Screen</span>
@@ -138,7 +138,7 @@ export function MediaPlayerStage({
                 onClick={onOpenMediaModal}
                 className="text-xs font-semibold text-zinc-300 hover:text-white bg-black/60 hover:bg-black/80 border border-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <Tv className="w-3.5 h-3.5 text-[#f4258c]" />
+                <Tv className="w-3.5 h-3.5 text-[#8b5cf6]" />
                 <span>Change Media</span>
               </button>
             </div>
@@ -146,8 +146,8 @@ export function MediaPlayerStage({
 
         {/* Sync Status Banner */}
         {showSyncNotice && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-black/90 border border-[#f4258c]/40 text-white text-xs px-4 py-2 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2 animate-fade-in">
-            <Sparkles className="w-4 h-4 text-[#f4258c]" />
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-black/90 border border-[#8b5cf6]/40 text-white text-xs px-4 py-2 rounded-xl backdrop-blur-md shadow-2xl flex items-center gap-2 animate-fade-in">
+            <Sparkles className="w-4 h-4 text-[#8b5cf6]" />
             <span>Full video file playback sync activates in Phase 2. WebRTC voice & video is live!</span>
           </div>
         )}
@@ -165,7 +165,7 @@ export function MediaPlayerStage({
           {/* Large Center Play / Pause Indicator */}
           <button
             onClick={handleTogglePlay}
-            className="absolute z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#f4258c]/90 hover:bg-[#f4258c] text-white flex items-center justify-center shadow-2xl shadow-[#f4258c]/50 transition-transform active:scale-95 cursor-pointer pl-1"
+            className="absolute z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#8b5cf6]/90 hover:bg-[#8b5cf6] text-white flex items-center justify-center shadow-2xl shadow-[#8b5cf6]/50 transition-transform active:scale-95 cursor-pointer pl-1"
           >
             {isPlaying ? (
               <Pause className="w-8 h-8 fill-white" />
@@ -176,13 +176,13 @@ export function MediaPlayerStage({
 
           {/* Quick Notice Pill on Canvas */}
           <div className="absolute bottom-16 left-4 bg-black/70 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg text-xs text-zinc-300 flex items-center gap-2">
-            <Info className="w-3.5 h-3.5 text-[#f4258c]" />
+            <Info className="w-3.5 h-3.5 text-[#8b5cf6]" />
             <span>Phase 1 Media Canvas • WebRTC Video Below</span>
           </div>
         </div>
 
         {/* COMPACT PLAYER CONTROLS BAR */}
-        <div className="bg-[#0e1017] border-t border-white/10 px-4 py-3 space-y-2">
+        <div className="bg-[#15121c] border-t border-white/10 px-4 py-3 space-y-2">
           {/* Progress / Scrub Bar */}
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-mono text-zinc-400 w-10 text-right">
@@ -199,7 +199,7 @@ export function MediaPlayerStage({
               className="flex-1 h-2 bg-zinc-800 hover:h-2.5 rounded-full relative cursor-pointer group/bar transition-all"
             >
               <div
-                className="h-full bg-gradient-to-r from-[#f4258c] to-[#e01e7e] rounded-full relative"
+                className="h-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-full relative"
                 style={{ width: `${(currentTime / duration) * 100}%` }}
               >
                 <span className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow opacity-0 group-hover/bar:opacity-100 transition-opacity" />
@@ -251,7 +251,7 @@ export function MediaPlayerStage({
                     setVolume(Number(e.target.value));
                     setIsMuted(false);
                   }}
-                  className="w-16 sm:w-20 h-1 bg-zinc-700 rounded-lg accent-[#f4258c] cursor-pointer"
+                  className="w-16 sm:w-20 h-1 bg-zinc-700 rounded-lg accent-[#8b5cf6] cursor-pointer"
                 />
               </div>
             </div>
@@ -273,10 +273,10 @@ export function MediaPlayerStage({
                   setShowSyncNotice(true);
                   setTimeout(() => setShowSyncNotice(false), 3000);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#f4258c]/15 hover:bg-[#f4258c]/25 border border-[#f4258c]/30 text-[#f4258c] text-xs font-semibold transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#8b5cf6]/15 hover:bg-[#8b5cf6]/25 border border-[#8b5cf6]/30 text-[#8b5cf6] text-xs font-semibold transition-colors cursor-pointer"
                 title="Synchronize room timestamp"
               >
-                <span className="w-2 h-2 rounded-full bg-[#f4258c] animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-ping" />
                 <span>Sync Room</span>
               </button>
 
@@ -301,7 +301,7 @@ export function MediaPlayerStage({
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
               Live Participants & Calls
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-[#f4258c] border border-[#f4258c]/20">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-[#8b5cf6] border border-[#8b5cf6]/20">
               WebRTC 1:1
             </span>
           </div>

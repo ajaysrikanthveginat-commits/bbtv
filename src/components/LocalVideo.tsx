@@ -195,7 +195,7 @@ export function LocalVideo({
       </div>
 
       {/* Compact Track Footer */}
-      <div className="bg-[#0e1017] px-3 py-1.5 border-t border-white/5 text-[10px] text-zinc-500 flex items-center justify-between">
+      <div className="bg-[#15121c] px-3 py-1.5 border-t border-white/5 text-[10px] text-zinc-500 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span>Tracks: <strong className="text-zinc-300 font-mono">{videoTracks.length}V / {audioTracks.length}A</strong></span>
         </div>

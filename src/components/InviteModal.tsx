@@ -41,7 +41,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
 
         {/* Modal Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#f4258c]/15 border border-[#f4258c]/30 flex items-center justify-center text-[#f4258c] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 flex items-center justify-center text-[#8b5cf6] shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
@@ -57,7 +57,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
         {/* Room Code Section */}
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            <Key className="w-3.5 h-3.5 text-[#f4258c]" />
+            <Key className="w-3.5 h-3.5 text-[#8b5cf6]" />
             <span>Room Code</span>
           </label>
           <div className="flex items-center gap-2 bg-[#090a0f] border border-white/10 rounded-xl p-2 pl-3">
@@ -66,7 +66,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
             </span>
             <button
               onClick={handleCopyCode}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f4258c] hover:bg-[#e01e7e] text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-[#f4258c]/20 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-[#8b5cf6]/20 cursor-pointer"
             >
               {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedCode ? 'Copied' : 'Copy'}</span>
@@ -77,7 +77,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
         {/* Shareable Link Section */}
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            <Link2 className="w-3.5 h-3.5 text-[#f4258c]" />
+            <Link2 className="w-3.5 h-3.5 text-[#8b5cf6]" />
             <span>Shareable Link</span>
           </label>
           <div className="flex items-center gap-2 bg-[#090a0f] border border-white/10 rounded-xl p-2 pl-3">
@@ -96,7 +96,7 @@ export function InviteModal({ isOpen, roomId, onClose }: InviteModalProps) {
 
         {/* Bottom Hint */}
         <div className="bg-black/30 border border-white/5 p-3 rounded-xl text-[11px] text-zinc-400 flex items-start gap-2">
-          <QrCode className="w-4 h-4 text-[#f4258c] shrink-0 mt-0.5" />
+          <QrCode className="w-4 h-4 text-[#8b5cf6] shrink-0 mt-0.5" />
           <span>
             The other participant can paste this code or link in any modern browser to immediately join your Phase 1 WebRTC room.
           </span>
