@@ -44,7 +44,7 @@ export function LandingPage({
   const [roomName, setRoomName] = useState("Movie night");
   const [code, setCode] = useState(initialRoomCode || "");
   const [allowControl, setAllowControl] = useState(true);
-  const [allowShare, setAllowShare] = useState(true);
+  const allowShare = false;
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!wsConnected || isSubmitting || !name.trim()) return;
@@ -196,14 +196,7 @@ export function LandingPage({
                       />{" "}
                       Let your guest control playback
                     </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={allowShare}
-                        onChange={(e) => setAllowShare(e.target.checked)}
-                      />{" "}
-                      Let your guest share their screen
-                    </label>
+
                   </details>
                 </>
               ) : (

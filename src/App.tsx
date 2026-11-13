@@ -56,7 +56,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Media Player State
-  const [mediaTitle, setMediaTitle] = useState<string>('Cosmos Laundromat (4K Ultra HD)');
+  const [mediaTitle, setMediaTitle] = useState<string>('Movie night');
 
   // UI Modals & Navigation state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -308,6 +308,17 @@ export default function App() {
       if (!curWebRTC) return;
 
       switch (message.type) {
+        case 'WATCH_STATE': {
+          if (message.roomId !== roomIdRef.current) break;
+          if (message.roomName) setRoomName(message.roomName);
+          if (message.hostId) {
+            const nextRole = message.hostId === uid ? 'host' : 'participant';
+            roleRef.current = nextRole;
+            setRole(nextRole);
+            curWebRTC.setRoleAndRemotePeer(nextRole, remoteUserIdRef.current);
+          }
+          break;
+        }
         case 'ROOM_JOINED': {
           const validatedRoomId = (message.roomId || '').toUpperCase().trim();
           console.log(`[ROOM] ${message.role === 'host' ? 'ROOM_CREATED' : 'JOIN_SUCCESS'} client=${uid} room=${validatedRoomId}`);
@@ -764,6 +775,8 @@ export default function App() {
 
     signalingRef.current.send({
       type: 'CREATE_ROOM',
+      allowControl: params.allowControl,
+      roomName: params.roomName,
       roomId: '',
       senderId: localUserId,
     });
@@ -980,6 +993,8 @@ export default function App() {
           <main className="flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-5 flex flex-col lg:flex-row gap-4 sm:gap-5 min-h-0">
             {/* Left 75%: Media Player Stage + WebRTC Real Participant Video Tiles */}
             <MediaPlayerStage
+              signaling={signalingRef.current}
+              roomId={roomId}
               mediaTitle={mediaTitle}
               localStream={localStream}
               remoteStream={remoteStream}

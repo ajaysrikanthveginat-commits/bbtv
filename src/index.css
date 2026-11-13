@@ -675,3 +675,44 @@ button:disabled {
   .night-dock .night-control.hidden { display: none; }
   .night-dock .night-control { flex: 1; min-width: 0; padding-left: 3px; padding-right: 3px; white-space: nowrap; }
 }
+
+.watch-player { border:1px solid #ffffff14; border-radius:22px; overflow:hidden; background:#141019; }
+.watch-player:fullscreen { overflow:auto; }
+.watch-heading { display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 24px; }
+.watch-heading h2 { font-size:20px;letter-spacing:-.5px;font-weight:650;margin-top:8px; }
+.watch-status { font-size:11px;color:#d5c6ee;background:#a78bfa16;border:1px solid #a78bfa24;padding:8px 12px;border-radius:30px;white-space:nowrap; }
+.watch-source { display:flex;align-items:center;gap:12px;margin:0 24px;padding:6px 6px 6px 14px;background:#09070e;border:1px solid #ffffff18;border-radius:14px;color:#a78bfa; }
+.watch-source input { min-width:0;flex:1;background:transparent;color:#f5f0e9;font-size:12px;outline:none; }
+.watch-source button { white-space:nowrap; }
+.watch-hint { font-size:11px;line-height:1.7;color:#aa9bb8;padding:12px 24px; }
+.watch-canvas { position:relative;aspect-ratio:16/9;background:#07060a;display:grid;place-items:center; }
+.watch-canvas video { width:100%;height:100%;position:absolute;object-fit:contain; }
+.watch-empty { text-align:center;padding:25px;max-width:430px; }
+.watch-empty>span { display:inline-grid;place-items:center;width:80px;height:80px;border-radius:26px;background:#a78bfa12;color:#b99cef;margin-bottom:22px; }
+.watch-empty h3 { font-size:22px;font-weight:600;letter-spacing:-.6px; }
+.watch-empty p { font-size:13px;color:#a99bb6;line-height:1.8;margin-top:12px; }
+.watch-countdown { position:absolute;display:grid;place-items:center;background:#10091bba;border:1px solid #c4b5fd44;border-radius:50%;width:110px;height:110px;font-size:64px;color:#e9ddff; }
+.watch-unblock { position:absolute;bottom:20px; }
+.watch-playback { display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #ffffff0b; }
+.watch-playback>input { flex:1;min-width:30px;accent-color:#a78bfa; }
+.watch-playback>span { font-size:11px;font-variant-numeric:tabular-nums;color:#b9adc5; }
+.watch-lobby { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px; }
+.watch-lobby h3 { font-size:14px;font-weight:600; }
+.watch-lobby p { font-size:11px;color:#aa9bb8;margin-top:5px; }
+.watch-options { display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding:0 24px 20px;font-size:11px;color:#baacc9; }
+.watch-options label { display:flex;align-items:center;gap:10px; }
+.watch-options input { accent-color:#a78bfa; }
+.watch-player button:disabled { opacity:.4; }
+.watch-player>.night-error { margin:0 20px 20px; }
+@media(max-width:720px) { .watch-heading{padding:18px 15px}.watch-heading h2{font-size:16px}.watch-source{margin:0 15px}.watch-hint{padding:12px 15px}.watch-empty h3{font-size:17px}.watch-empty>span{width:50px;height:50px;margin-bottom:10px}.watch-empty p{font-size:11px}.watch-lobby{padding:18px 15px}.watch-lobby button{white-space:nowrap}.watch-playback{padding:12px;gap:7px}.watch-playback .night-control{padding:9px}.watch-status{font-size:9px;padding:7px}.watch-heading .night-eyebrow{font-size:8px} }
+.media-dialog { margin:auto;padding:0;width:min(560px,calc(100% - 32px));max-height:85vh;border:1px solid #ffffff20;border-radius:24px;background:#191320;color:#f5f0e9;box-shadow:0 30px 120px #0009; }
+.media-dialog::backdrop { background:#050309b8;backdrop-filter:blur(10px); }
+.media-dialog-body { padding:32px;position:relative; }
+.media-close { position:absolute;right:14px;top:14px; }
+.media-dialog .night-eyebrow{font-size:8px;padding-right:40px}
+.media-dialog h2{font-size:27px;letter-spacing:-1px;margin:18px 0 8px;font-weight:650}
+.media-dialog p{font-size:12px;color:#b6a7c4;line-height:1.8}
+.media-option{display:flex;gap:18px;text-align:left;border:1px solid #ffffff14;border-radius:15px;padding:20px;margin-top:20px;width:100%;background:#241c30}
+.media-option svg{flex-shrink:0;color:#b89df2;margin-top:3px}
+.media-option h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.media-option:disabled{opacity:.5}

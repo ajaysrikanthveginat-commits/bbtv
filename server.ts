@@ -4,8 +4,11 @@ import path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer as createViteServer } from 'vite';
 import crypto from 'crypto';
+import { newWatchState, changeWatch, watchPosition, type WatchState } from './src/shared/watch';
 
 interface RoomData {
+  watch: WatchState;
+  roomName: string;
   roomId: string;
   hostId: string;
   participantId: string | null;
@@ -94,6 +97,8 @@ function removeClientFromRoom(ws: WebSocket, session: ClientSession, explicitLea
   }
 
   const room = rooms.get(roomId)!;
+  if (room.clients.get(userId) !== ws) return;
+  room.watch = { ...room.watch, position: watchPosition(room.watch, Date.now()), playing: false, ready: [], updatedAt: Date.now(), revision: room.watch.revision + 1 };
   room.clients.delete(userId);
   session.roomId = null;
 
@@ -156,6 +161,7 @@ wss.on('connection', (ws: WebSocket) => {
       return;
     }
 
+    if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'PING') {
       sendTo(ws, { type: 'PONG' });
       return;
@@ -163,6 +169,7 @@ wss.on('connection', (ws: WebSocket) => {
 
     // Allow client to supply a persistent client identifier if provided
     const clientSpecifiedId = msg.senderId || userId;
+    if (session.roomId && session.userId !== clientSpecifiedId) return;
     session.userId = clientSpecifiedId;
 
     switch (msg.type) {
@@ -181,6 +188,8 @@ wss.on('connection', (ws: WebSocket) => {
           participantId: null,
           clients: new Map([[clientSpecifiedId, ws]]),
           cleanupTimer: null,
+          roomName: typeof msg.roomName === 'string' ? msg.roomName.trim().slice(0,60) || 'Movie night' : 'Movie night',
+          watch: newWatchState(msg.allowControl !== false),
         };
         rooms.set(roomId, room);
         session.roomId = roomId;
@@ -281,6 +290,7 @@ wss.on('connection', (ws: WebSocket) => {
           return;
         }
 
+        room.watch = { ...room.watch, position: watchPosition(room.watch, Date.now()), playing: false, ready: [], updatedAt: Date.now(), revision: room.watch.revision + 1 };
         // Accept as participant
         room.participantId = clientSpecifiedId;
         room.clients.set(clientSpecifiedId, ws);
@@ -333,7 +343,11 @@ wss.on('connection', (ws: WebSocket) => {
           room.cleanupTimer = null;
         }
 
-        const role = msg.role || (room.hostId === clientSpecifiedId ? 'host' : 'participant');
+        if (room.hostId !== clientSpecifiedId && room.participantId !== clientSpecifiedId) {
+          sendTo(ws, { type: 'ROOM_ERROR', roomId: targetRoomId, senderId: 'SERVER', message: 'Please leave and rejoin this room using its code.' });
+          return;
+        }
+        const role = room.hostId === clientSpecifiedId ? 'host' : 'participant';
         if (role === 'host') {
           room.hostId = clientSpecifiedId;
         } else {
@@ -360,6 +374,20 @@ wss.on('connection', (ws: WebSocket) => {
       case 'USER_LEFT': {
         logRoom('LEAVE_ROOM', { client: clientSpecifiedId, room: session.roomId });
         removeClientFromRoom(ws, session, true);
+        break;
+      }
+
+      case 'WATCH_GET':
+      case 'WATCH_ACTION': {
+        const room = session.roomId ? rooms.get(session.roomId) : undefined;
+        if (!room || room.clients.get(session.userId) !== ws) return;
+        if (msg.type === 'WATCH_ACTION') {
+          try { room.watch = changeWatch(room.watch, msg.action, session.userId, room.hostId, [...room.clients.keys()], Date.now()); }
+          catch (error) { sendTo(ws, { type: 'WATCH_ERROR', roomId: room.roomId, senderId: 'SERVER', requestId: msg.requestId, message: error instanceof Error ? error.message : 'Invalid watch action.' }); return; }
+        }
+        const payload = { type: 'WATCH_STATE', roomId: room.roomId, senderId: 'SERVER', requestId: typeof msg.requestId === 'string' ? msg.requestId.slice(0,100) : undefined, state: room.watch, roomName: room.roomName, hostId: room.hostId, members: [...room.clients.keys()], serverTime: Date.now(), requestTime: msg.type === 'WATCH_GET' ? msg.requestTime : undefined };
+        if (msg.type === 'WATCH_GET') sendTo(ws, payload);
+        else room.clients.forEach(client => sendTo(client, payload));
         break;
       }
 
@@ -441,6 +469,10 @@ wss.on('connection', (ws: WebSocket) => {
           return;
         }
 
+        if (room.clients.get(session.userId) !== ws) return;
+        if (msg.type === 'SCREEN_SHARE_STARTED') {
+          room.watch = { ...room.watch, position: watchPosition(room.watch, Date.now()), playing: false, ready: [], updatedAt: Date.now(), revision: room.watch.revision + 1 };
+        }
         const targetId = msg.targetId;
         console.log(`[WEBRTC SIGNAL] type=${msg.type} room=${currentRoomId} from=${clientSpecifiedId} target=${targetId || 'broadcast'}`);
 

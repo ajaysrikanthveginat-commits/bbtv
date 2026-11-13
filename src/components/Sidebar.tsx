@@ -169,6 +169,9 @@ export function Sidebar({
             <div ref={messagesEndRef} />
           </div>
 
+          <div className="flex gap-2 px-3 py-2" aria-label="Quick reactions">
+            {['❤️', '😂', '👏', '🍿'].map(reaction => <button key={reaction} type="button" aria-label={`Send ${reaction} reaction`} className="rounded-lg bg-white/5 px-3 py-2 hover:bg-white/10" onClick={() => onSendMessage(reaction)}>{reaction}</button>)}
+          </div>
           {/* Bottom Chat Input Form */}
           <form
             onSubmit={handleSubmit}
