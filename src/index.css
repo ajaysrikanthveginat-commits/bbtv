@@ -1155,3 +1155,12 @@ button:disabled {
 
 /* The projected image can lean past its frame without adding page scroll. */
 .cut-home .premiere-main { overflow: clip; }
+.cut-home .premiere-copy h1 { letter-spacing:-.058em; }
+.cut-room .call-viewport { background:linear-gradient(145deg,#28331f,#151d12); }
+.cut-room .call-placeholder svg, .cut-room .cinema-call-link, .cut-room .watch-source > svg { color:var(--coral); }
+.cut-room .watch-status { background:#28311d; border-color:#51613e; color:#dcefc3; }
+.cut-room .watch-source, .cut-room .queue-body input, .cut-room .queue-body li { background:#0e150d; }
+.cut-timeline { position:relative; flex:1; min-width:30px; display:flex; }
+.cut-timeline > input { width:100%; min-width:0; }
+.cut-timeline-marks { pointer-events:none; position:absolute; inset:0 8px; }
+.cut-timeline-marks i { display:block; position:absolute; top:50%; width:4px; height:7px; translate:-50% calc(-50% + 7px); background:var(--coral); border-radius:1px; }

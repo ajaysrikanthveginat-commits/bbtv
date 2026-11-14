@@ -121,5 +121,7 @@ test('actual media playback stays together after countdown, seek, and break', as
   await expect.poll(()=>guest.locator('.watch-canvas video').evaluate((v:HTMLVideoElement)=>v.currentTime)).toBeLessThan(11);
   await expect.poll(async()=>await page.locator('.watch-canvas video').evaluate((v:HTMLVideoElement)=>v.paused)).toBe(true);
   await expect(page.locator('.watch-status')).toHaveText('Paused');
+  await page.getByRole('button', {name: 'Jump to Opening shot'}).click();
+  await expect.poll(() => guest.locator('.watch-canvas video').evaluate((v:HTMLVideoElement) => v.currentTime)).toBeLessThan(3);
   await context.close();
 });

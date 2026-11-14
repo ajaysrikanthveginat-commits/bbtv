@@ -258,6 +258,7 @@ export function WatchTogetherPlayer({
           {state?.playing ? <Pause size={18} /> : <Play size={18} />}
         </button>
         <span>{time(position)}</span>
+        <div className="cut-timeline">
         <input
           aria-label="Playback position"
           type="range"
@@ -270,6 +271,12 @@ export function WatchTogetherPlayer({
             send({ kind: "seek", position: Number(event.target.value) })
           }
         />
+          {duration > 0 && <div className="cut-timeline-marks" aria-hidden="true">
+            {state?.moments.filter(moment => moment.position <= duration).map((moment) => (
+              <i key={moment.id} style={{left: `${moment.position / duration * 100}%`}} />
+            ))}
+          </div>}
+        </div>
         <span>{time(duration)}</span>
         <button
           className="night-control"

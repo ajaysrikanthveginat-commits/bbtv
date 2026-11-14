@@ -68,16 +68,16 @@ export function Sidebar({
 
   return (
     <aside
-      className={`room-sidebar w-full lg:w-80 xl:w-96 bg-[#1e1d28] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl ${className}`}
+      className={`room-sidebar w-full lg:w-80 xl:w-96 bg-[#171e14] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl ${className}`}
     >
       {/* Top Tab Bar Header */}
-      <div className="bg-[#242331] p-2 border-b border-white/10 flex items-center justify-between">
+      <div className="bg-[#222a1d] p-2 border-b border-white/10 flex items-center justify-between">
         <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 flex-1 mr-2">
           <button
             onClick={() => onTabChange('chat')}
             className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'chat'
-                ? 'bg-[#ffac83] text-[#2e1511] shadow-md shadow-[#ffac83]/25'
+                ? 'bg-[#d7ff38] text-[#161c0c] shadow-md shadow-[#d7ff38]/25'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -94,7 +94,7 @@ export function Sidebar({
             onClick={() => onTabChange('people')}
             className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'people'
-                ? 'bg-[#ffac83] text-[#2e1511] shadow-md shadow-[#ffac83]/25'
+                ? 'bg-[#d7ff38] text-[#161c0c] shadow-md shadow-[#d7ff38]/25'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -111,13 +111,13 @@ export function Sidebar({
           title="Invite Friend"
           className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
         >
-          <UserPlus className="w-4 h-4 text-[#ffac83]" />
+          <UserPlus className="w-4 h-4 text-[#d7ff38]" />
         </button>
       </div>
 
       {/* TAB CONTENT: CHAT */}
       {activeTab === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0 bg-[#181822]">
+        <div className="flex-1 flex flex-col min-h-0 bg-[#0d120c]">
           {/* Messages Container */}
           <div className="flex-1 p-3 overflow-y-auto space-y-3 min-h-0">
             {messages.length === 0 ? (
@@ -157,8 +157,8 @@ export function Sidebar({
                     <div
                       className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed break-words shadow-md ${
                         msg.isLocal
-                          ? 'bg-[#ffac83] text-[#2e1511] rounded-br-xs'
-                          : 'bg-[#282735] text-zinc-200 border border-white/10 rounded-bl-xs'
+                          ? 'bg-[#d7ff38] text-[#161c0c] rounded-br-xs'
+                          : 'bg-[#222a1d] text-zinc-200 border border-white/10 rounded-bl-xs'
                       }`}
                     >
                       {msg.text}
@@ -176,7 +176,7 @@ export function Sidebar({
           {/* Bottom Chat Input Form */}
           <form
             onSubmit={handleSubmit}
-            className="p-2.5 bg-[#242331] border-t border-white/10 flex items-center gap-2"
+            className="p-2.5 bg-[#222a1d] border-t border-white/10 flex items-center gap-2"
           >
             <input
               type="text"
@@ -184,13 +184,13 @@ export function Sidebar({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               aria-label="Message your room" placeholder="Say something…"
-              className="flex-1 bg-[#15141d] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-[#ffac83] focus:border-[#ffac83] transition-all"
+              className="flex-1 bg-[#0b100a] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-[#d7ff38] focus:border-[#d7ff38] transition-all"
             />
             <button
               type="submit"
               aria-label="Send message"
               disabled={!inputText.trim()}
-              className="w-9 h-9 rounded-xl bg-[#ffac83] hover:bg-[#ffd0b8] disabled:opacity-40 text-[#2e1511] flex items-center justify-center transition-all cursor-pointer shadow-md shadow-[#ffac83]/25 shrink-0"
+              className="w-9 h-9 rounded-xl bg-[#d7ff38] hover:bg-[#ebff98] disabled:opacity-40 text-[#161c0c] flex items-center justify-center transition-all cursor-pointer shadow-md shadow-[#d7ff38]/25 shrink-0"
             >
               <Send className="w-3.5 h-3.5" />
             </button>
@@ -200,7 +200,7 @@ export function Sidebar({
 
       {/* TAB CONTENT: PEOPLE */}
       {activeTab === 'people' && (
-        <div className="flex-1 flex flex-col p-3 bg-[#181822] space-y-3 overflow-y-auto">
+        <div className="flex-1 flex flex-col p-3 bg-[#0d120c] space-y-3 overflow-y-auto">
           <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 px-1">
             Connected Members ({participants.filter((p) => p.isConnected).length}/2)
           </div>
@@ -211,8 +211,8 @@ export function Sidebar({
                 key={person.id}
                 className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
                   person.isConnected
-                    ? 'bg-[#242331] border-white/10 shadow-md'
-                    : 'bg-[#1e1d28]/60 border-white/5 opacity-60'
+                    ? 'bg-[#222a1d] border-white/10 shadow-md'
+                    : 'bg-[#171e14]/60 border-white/5 opacity-60'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -221,7 +221,7 @@ export function Sidebar({
                     className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shadow ${
                       person.isLocal
                         ? 'bg-indigo-600 ring-2 ring-indigo-400/40'
-                        : 'bg-[#ffac83] ring-2 ring-[#ffac83]/40'
+                        : 'bg-[#d7ff38] ring-2 ring-[#d7ff38]/40'
                     }`}
                   >
                     {person.name.charAt(0).toUpperCase()}
@@ -287,15 +287,15 @@ export function Sidebar({
 
           {/* Invite Friend Promo Card if alone */}
           {participants.filter((p) => p.isConnected).length < 2 && (
-            <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-[#ffac83]/10 to-transparent border border-[#ffac83]/20 text-center space-y-2">
-              <Sparkles className="w-5 h-5 text-[#ffac83] mx-auto" />
+            <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-[#d7ff38]/10 to-transparent border border-[#d7ff38]/20 text-center space-y-2">
+              <Sparkles className="w-5 h-5 text-[#d7ff38] mx-auto" />
               <div className="text-xs font-bold text-white">Movie Night with a Friend</div>
               <p className="text-[11px] text-zinc-400 leading-relaxed">
                 Send your friend a link and settle in for a movie together.
               </p>
               <button
                 onClick={onOpenInviteModal}
-                className="w-full mt-2 py-2 text-xs font-bold text-[#2e1511] bg-[#ffac83] hover:bg-[#ffd0b8] rounded-lg transition-all shadow-md shadow-[#ffac83]/25 cursor-pointer"
+                className="w-full mt-2 py-2 text-xs font-bold text-[#161c0c] bg-[#d7ff38] hover:bg-[#ebff98] rounded-lg transition-all shadow-md shadow-[#d7ff38]/25 cursor-pointer"
               >
                 Copy Invite Link
               </button>
