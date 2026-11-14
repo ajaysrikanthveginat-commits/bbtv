@@ -100,3 +100,14 @@ test("each person can vote for one suggestion and undo their vote", () => {
   assert.deepEqual(switched.queue.map(entry => entry.votes), [[], ["guest"]]);
   assert.deepEqual(vote(switched, 1).queue.map(entry => entry.votes), [[], []]);
 });
+
+test("shared moments use the room clock and respect seek permissions", () => {
+  const people = ["host", "guest"];
+  const state = { ...newWatchState(false), url: "/bbtv-preview.webm", updatedAt: 1000, playing: true, position: 5 };
+  const pinned = changeWatch(state, {kind: "moment-add", label: "First shot"}, "guest", "host", people, 3000);
+  assert.equal(pinned.moments[0].position, 7);
+  const id = pinned.moments[0].id;
+  assert.throws(() => changeWatch(pinned, {kind: "moment-seek", id}, "guest", "host", people, 7000), /host/);
+  assert.equal(changeWatch(pinned, {kind: "moment-seek", id}, "host", "host", people, 7000).position, 7);
+  assert.deepEqual(changeWatch(pinned, {kind: "preview"}, "host", "host", people, 8000).moments, []);
+});

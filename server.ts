@@ -41,7 +41,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'bbtv',
-    version: 'intermission-6',
+    version: 'cut-7',
     activeRooms: rooms.size,
 
     timestamp: new Date().toISOString(),

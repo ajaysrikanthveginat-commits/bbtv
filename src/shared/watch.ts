@@ -5,7 +5,10 @@ export interface QueueEntry {
   url: string;
 }
 
+export interface Moment { id: string; position: number; label: string; actor: string }
+
 export interface WatchState {
+  moments: Moment[];
   queue: QueueEntry[];
   breakUntil?: number;
   title?: string;
@@ -22,6 +25,9 @@ export type WatchAction =
   | { kind: "queue-add"; title: string; url: string }
   | { kind: "queue-remove" | "queue-load"; id: string }
   | { kind: "preview" }
+  | { kind: "moment-add"; label: string }
+  | { kind: "moment-remove"; id: string }
+  | { kind: "moment-seek"; id: string }
   | { kind: "queue-vote"; id: string }
   | { kind: "intermission" }
   | { kind: "ready"; ready: boolean }
@@ -32,6 +38,7 @@ export type WatchAction =
 export const newWatchState = (allowControl = true): WatchState => ({
   url: "",
   queue: [],
+  moments: [],
   position: 0,
   playing: false,
   updatedAt: 0,
@@ -57,6 +64,23 @@ export function changeWatch(
     breakUntil: state.breakUntil && state.breakUntil > now ? state.breakUntil : undefined,
     revision: state.revision + 1,
   };
+  if (action.kind === "moment-add") {
+    const label = typeof action.label === "string" ? action.label.trim() : "";
+    if (!state.url || !label || label.length > 48) throw new Error("Choose a video and name your moment.");
+    if (state.moments.length >= 24) throw new Error("This video already has 24 moments.");
+    const position = Math.floor(watchPosition(state, now));
+    const moments = [...state.moments, { id: String(next.revision), position, label, actor }];
+    return { ...next, moments: moments.sort((a, b) => a.position - b.position) };
+  }
+  if (action.kind === "moment-remove") {
+    return { ...next, moments: state.moments.filter((moment) =>
+      moment.id !== action.id || (moment.actor !== actor && actor !== host)) };
+  }
+  if (action.kind === "moment-seek") {
+    const moment = state.moments.find((item) => item.id === action.id);
+    if (!moment) throw new Error("That moment is no longer available.");
+    return changeWatch(state, { kind: "seek", position: moment.position }, actor, host, members, now);
+  }
   if (action.kind === "intermission") {
     if (!state.url) throw new Error("Choose a video first.");
     return {
@@ -101,7 +125,7 @@ export function changeWatch(
     if (!entry) throw new Error("That video is no longer queued.");
     const queue = state.queue.filter((item) => item.id !== entry.id);
     return action.kind === "queue-remove" ? { ...next, queue } : {
-      ...next, breakUntil: undefined, queue, url: entry.url, title: entry.title, position: 0, playing: false, ready: [], updatedAt: now,
+      ...next, moments: [], breakUntil: undefined, queue, url: entry.url, title: entry.title, position: 0, playing: false, ready: [], updatedAt: now,
     };
   }
   if (
@@ -113,12 +137,13 @@ export function changeWatch(
     throw new Error("Only the host can do that.");
   switch (action.kind) {
     case "preview":
-      return { ...next, breakUntil: undefined, url: "/bbtv-preview.webm", title: "BBTV Preview", playing: false, position: 0, updatedAt: now, ready: [] };
+      return { ...next, moments: [], breakUntil: undefined, url: "/bbtv-preview.webm", title: "BBTV Preview", playing: false, position: 0, updatedAt: now, ready: [] };
     case "source": {
       const url = validateVideoUrl(action.url);
       return {
         ...next,
         url,
+        moments: [],
         breakUntil: undefined,
         title: undefined,
         playing: false,

@@ -39,17 +39,17 @@ export function LandingPage(p: LandingPageProps) {
     }
   }
   return (
-    <div className="intermission">
+    <div className="cut-home">
       <header className="premiere-nav">
-        <a className="premiere-brand" href="/" aria-label="BBTV home"><Clapperboard size={19} /> BBTV<span> / WATCH TOGETHER</span></a>
+        <a className="premiere-brand" href="/" aria-label="BBTV home"><Clapperboard size={19} /> BBTV<span> / THE SHARED CUT</span></a>
         <span className="premiere-status" role="status"><i data-online={p.wsConnected} />{p.wsConnected ? "Online" : "Connecting"}</span>
       </header>
       <main className="premiere-main">
         <div className="premiere-hero" onPointerMove={moveProjection} onPointerLeave={(event) => event.currentTarget.style.removeProperty("--projection-tilt")}>
           <div className="premiere-image" aria-hidden="true" />
           <div className="premiere-copy">
-            <h1>{p.initialRoomCode ? <>Your seat<br /><em>is waiting.</em></> : <>Two seats.<br /><em>One screen.</em></>}</h1>
-            <p>{p.initialRoomCode ? "Join your friend’s screening." : "Start a private screening with a friend. Pick a film together, call, and press play in sync."}</p>
+            <h1>{p.initialRoomCode ? <>Your seat<br /><em>is waiting.</em></> : <>The shared<br /><em>cut.</em></>}</h1>
+            <p>{p.initialRoomCode ? "Join your friend’s screening." : "A private screening for two. Roll together, talk through it, and pin the scenes you’ll want to replay."}</p>
             <button type="button" className="premiere-trailer" onClick={() => { dialog.current?.showModal(); preview.current?.play().catch(() => {}); }}><Play size={15} /> Play the preview</button>
           </div>
           <button type="button" className="premiere-jump" aria-label="Go to room setup" onClick={() => { ticket.current?.scrollIntoView({block:"center"}); ticket.current?.querySelector("input")?.focus({preventScroll:true}); }}><ArrowDownRight size={30} /></button>
@@ -60,7 +60,7 @@ export function LandingPage(p: LandingPageProps) {
             <button type="button" aria-pressed={mode === "join"} onClick={() => {setMode("join"); p.onClearError();}}>Join room</button>
           </div>
           <form onSubmit={submit}>
-            <h2 id="ticket-title">{mode === "create" ? "Open a screening" : "Enter your room"}</h2>
+            <h2 id="ticket-title">{mode === "create" ? "Create a screening" : "Enter your room"}</h2>
             {p.error && <p role="alert">{p.error}</p>}
             <label>Your name<input autoComplete="given-name" required maxLength={40} value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" /></label>
             {mode === "create"
@@ -70,7 +70,7 @@ export function LandingPage(p: LandingPageProps) {
               {p.isSubmitting ? "Opening…" : mode === "create" ? "Start movie night" : "Join movie night"}<ArrowRight size={19} />
             </button>
           </form>
-          <p className="ticket-note"><AudioLines size={15} /> Camera and microphone are optional.</p>
+          <p className="ticket-note"><AudioLines size={15} /> Invite one friend. No account needed.</p>
         </section>
       </main>
       <footer className="premiere-footer"><span>BBTV</span>{p.onToggleDiagnostics && <button onClick={p.onToggleDiagnostics}>Connection help</button>}</footer>
