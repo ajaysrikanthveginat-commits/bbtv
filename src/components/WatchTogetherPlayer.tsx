@@ -200,7 +200,7 @@ export function WatchTogetherPlayer({
             <h3>A seat for you. A seat for them.</h3>
             <p>
               {isHost
-                ? "Add a video link above, or share your screen from the toolbar."
+                ? "Load a video below, or share your screen from the toolbar."
                 : "Your host is choosing something to watch. Get comfortable."}
             </p>
             {isHost && <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
@@ -209,7 +209,7 @@ export function WatchTogetherPlayer({
           </div>
         )}
         {!!countdown && (
-          <div className="watch-countdown" aria-live="polite">
+          <div key={countdown} className="watch-countdown" aria-live="polite">
             {countdown}
           </div>
         )}
