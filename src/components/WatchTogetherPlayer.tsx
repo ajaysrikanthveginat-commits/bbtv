@@ -10,6 +10,7 @@ import {
   ListVideo,
   Plus,
   X,
+  LampDesk,
 } from "lucide-react";
 import { SignalingService } from "../services/SignalingService";
 import { WatchAction, WatchState, watchPosition } from "../shared/watch";
@@ -40,6 +41,7 @@ export function WatchTogetherPlayer({
   const [blocked, setBlocked] = useState(false);
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
+  const [ambient, setAmbient] = useState(true);
   const [volume, setVolume] = useState(0.8);
   const [now, setNow] = useState(Date.now());
   const isHost = host === userId;
@@ -141,7 +143,7 @@ export function WatchTogetherPlayer({
   return (
     <section
       ref={container}
-      className="watch-player"
+      className={`watch-player ${ambient ? "ambient-on" : ""}`}
       aria-label="Watch together"
     >
       <div className="watch-heading">
@@ -197,11 +199,11 @@ export function WatchTogetherPlayer({
             <span>
               <Film size={36} />
             </span>
-            <h3>A seat for you. A seat for them.</h3>
+            <h3>The screen is yours.</h3>
             <p>
               {isHost
                 ? "Load a video below, or share your screen from the toolbar."
-                : "Your host is choosing something to watch. Get comfortable."}
+                : "Your host is choosing what to watch."}
             </p>
             {isHost && <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
               <Play size={14} /> Try the watch preview
@@ -327,6 +329,9 @@ export function WatchTogetherPlayer({
         </button>
       </div>
       <div className="watch-options">
+        <button type="button" className="night-control ambient-toggle" aria-pressed={ambient} onClick={() => setAmbient((value) => !value)}>
+          <LampDesk size={15} /> Ambient light
+        </button>
         <label>
           My volume
           <input
