@@ -995,3 +995,14 @@ button:disabled {
 .lobby-preview { margin-top: 19px; width: fit-content; }
 .lobby-dialog video { width: 100%; aspect-ratio: 16 / 9; background: #09080f; border-radius: 13px; }
 .lobby-dialog h2 { padding-right: 44px; }
+.cinema-layout { display: grid; gap: 18px; align-items: start; grid-template-columns: minmax(0,1fr) minmax(290px,370px); }
+.cinema-companion { display: grid; gap: 16px; min-width: 0; }
+.cinema-companion .room-sidebar { width: 100%; position: static; height: min(460px,60vh); max-height: none; }
+.cinema-companion .call-viewport { height: 116px; }
+.cinema-call-link { color:#ffc8ab; }
+.cinema-mode .cinema-layout { grid-template-columns: minmax(0,1fr); }
+.cinema-mode .cinema-companion { display:none; }
+@media(max-width: 960px) {
+  .cinema-layout { grid-template-columns: minmax(0,1fr); }
+  .cinema-companion .room-sidebar { height: 390px; }
+}

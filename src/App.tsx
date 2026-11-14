@@ -1025,7 +1025,7 @@ export default function App() {
           )}
 
           {/* Main Stage & Collaboration Workspace */}
-          <main className="studio-workspace flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-5 flex flex-col lg:flex-row gap-4 sm:gap-5 min-h-0">
+          <main className="cinema-workspace flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-5 min-h-0">
             {/* Left 75%: Media Player Stage + WebRTC Real Participant Video Tiles */}
             <MediaPlayerStage
               signaling={signalingRef.current}
@@ -1050,20 +1050,17 @@ export default function App() {
               onOpenInviteModal={() => setIsInviteModalOpen(true)}
               onEnableMedia={() => handleEnableMedia()}
               messages={messages}
+              companion={isSidebarOpen && (
+                <Sidebar
+                  activeTab={activeSidebarTab}
+                  onTabChange={setActiveSidebarTab}
+                  messages={messages}
+                  participants={participantsList}
+                  onSendMessage={handleSendMessage}
+                  onOpenInviteModal={() => setIsInviteModalOpen(true)}
+                />
+              )}
             />
-
-            {/* Right 25%: Collaboration Sidebar (Chat & People) */}
-            {isSidebarOpen && (
-              <Sidebar
-                activeTab={activeSidebarTab}
-                onTabChange={setActiveSidebarTab}
-                messages={messages}
-                participants={participantsList}
-                onSendMessage={handleSendMessage}
-                onOpenInviteModal={() => setIsInviteModalOpen(true)}
-                className="shrink-0"
-              />
-            )}
           </main>
         </div>
       )}

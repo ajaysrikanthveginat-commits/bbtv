@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { ChatMessage } from "./Sidebar";
 import { WatchTogetherPlayer } from "./WatchTogetherPlayer";
 import { SignalingService } from "../services/SignalingService";
@@ -29,6 +30,7 @@ interface MediaPlayerStageProps {
   onOpenInviteModal: () => void;
   onEnableMedia: () => void;
   messages: ChatMessage[];
+  companion: ReactNode;
 }
 
 export function MediaPlayerStage({
@@ -54,6 +56,7 @@ export function MediaPlayerStage({
   onOpenInviteModal,
   onEnableMedia,
   messages,
+  companion,
 }: MediaPlayerStageProps) {
   const [reaction, setReaction] = useState<ChatMessage | null>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -67,7 +70,7 @@ export function MediaPlayerStage({
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   return (
-    <div className="flex-1 flex flex-col gap-4 min-w-0">
+    <div className="cinema-layout">
       <div className="shared-stage">
       {reaction && <div key={reaction.id} className="stage-reaction" aria-hidden="true">{reaction.text}</div>}
       {/* If Screen Sharing is active, render the dedicated live screen share stage */}
@@ -92,22 +95,19 @@ export function MediaPlayerStage({
 
       </div>
 
-      {/* WEBRTC PARTICIPANT VIDEO GRID (Real Phase 1 Video Feeds) */}
+      <div className="cinema-companion">
       <div className="participant-section space-y-2">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-              Good company
-            </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-[#8b5cf6] border border-[#8b5cf6]/20">
-              Just us
+              In the room
             </span>
           </div>
 
           {!localStream && (
             <button
               onClick={onEnableMedia}
-              className="text-xs font-semibold text-violet-300 hover:text-violet-200 cursor-pointer"
+              className="cinema-call-link text-xs font-semibold cursor-pointer"
             >
               Turn on your call
             </button>
@@ -134,6 +134,8 @@ export function MediaPlayerStage({
             userName={localUserName}
           />
         </div>
+      </div>
+        {companion}
       </div>
     </div>
   );
