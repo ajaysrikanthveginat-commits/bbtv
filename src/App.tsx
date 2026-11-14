@@ -391,6 +391,7 @@ export default function App() {
           remoteUserIdRef.current = message.userId;
           setRemoteUserId(message.userId);
           setRemoteUserName('Friend');
+          curWebRTC.closePeerConnection();
           curWebRTC.setRoleAndRemotePeer(roleRef.current, message.userId);
           setDiagnostics((prev) => ({ ...prev, remoteUserId: message.userId }));
           addLog(`Remote peer ${message.userId.slice(0, 8)} joined the room!`, 'success');
@@ -975,6 +976,7 @@ export default function App() {
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onSelectSidebarTab={(tab) => {
+              setCinemaMode(false);
               setActiveSidebarTab(tab);
               setIsSidebarOpen(true);
             }}

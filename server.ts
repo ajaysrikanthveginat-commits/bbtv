@@ -93,6 +93,15 @@ function sendTo(ws: WebSocket, message: object): void {
   }
 }
 
+function announceReconnection(room: RoomData, userId: string): void {
+  room.clients.forEach((peer, peerId) => {
+    if (peerId !== userId) sendTo(peer, {
+      type: 'USER_JOINED', roomId: room.roomId, senderId: 'SERVER', userId,
+      role: room.hostId === userId ? 'host' : 'participant',
+    });
+  });
+}
+
 function logRoom(operation: string, details: { client?: string; room?: string | null; [key: string]: any }): void {
   const timestamp = new Date().toISOString();
   console.log(`[ROOM] [${timestamp}] ${operation} client=${details.client || 'anon'} room=${details.room || 'none'}`, details);
@@ -272,6 +281,7 @@ wss.on('connection', (ws: WebSocket) => {
           room.clients.set(clientSpecifiedId, ws);
           session.roomId = targetRoomId;
           logRoom('HOST_REJOINED', { client: clientSpecifiedId, room: targetRoomId });
+          announceReconnection(room, clientSpecifiedId);
 
           sendTo(ws, {
             type: 'ROOM_JOINED',
@@ -288,6 +298,7 @@ wss.on('connection', (ws: WebSocket) => {
           room.clients.set(clientSpecifiedId, ws);
           session.roomId = targetRoomId;
           logRoom('PARTICIPANT_REJOINED', { client: clientSpecifiedId, room: targetRoomId });
+          announceReconnection(room, clientSpecifiedId);
 
           sendTo(ws, {
             type: 'ROOM_JOINED',
@@ -384,6 +395,7 @@ wss.on('connection', (ws: WebSocket) => {
         const remoteId = role === 'host' ? room.participantId : room.hostId;
 
         logRoom('RECONNECT_SUCCESS', { client: clientSpecifiedId, room: targetRoomId, role, remoteId });
+        announceReconnection(room, clientSpecifiedId);
         sendTo(ws, {
           type: 'ROOM_JOINED',
           roomId: targetRoomId,

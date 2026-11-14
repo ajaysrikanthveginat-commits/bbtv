@@ -64,7 +64,7 @@ try {
   assert.match(rejected.message, /another browser/);
   intruder.close();
 
-  await request(
+  const guestSession = await request(
     guest,
     { type: "JOIN_ROOM", roomId, senderId: "guest" },
     "ROOM_JOINED",
@@ -120,8 +120,26 @@ try {
   );
   assert.equal(remaining.members.length, 1);
   assert.equal(remaining.state.playing, false);
+  const peerReturned = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Peer was not notified of reconnection")), 3000);
+    const receive = (raw) => {
+      const message = JSON.parse(raw);
+      if (message.type === "USER_JOINED" && message.userId === "guest") {
+        clearTimeout(timer);
+        host.off("message", receive);
+        resolve();
+      }
+    };
+    host.on("message", receive);
+  });
+  const returningGuest = await connect();
+  const restored = await request(returningGuest, {
+    type: "RECONNECT_ROOM", roomId, senderId: "guest", resumeToken: guestSession.resumeToken,
+  }, "ROOM_JOINED");
+  assert.equal(restored.role, "participant");
+  await peerReturned;
   console.log(
-    "PASS: HTTP health, room join, shared source, readiness gate, countdown, seek propagation, permissions, break, disconnect pause",
+    "PASS: HTTP health, room join, shared source, readiness gate, countdown, seek propagation, permissions, break, disconnect pause, authenticated reconnect and peer notification",
   );
 } finally {
   clearTimeout(timeout);
