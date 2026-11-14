@@ -1152,3 +1152,6 @@ button:disabled {
   .cut-home .premiere-copy h1 { font-size:clamp(54px,13vw,90px); }
   .cut-home .premiere-ticket { margin-top:0; }
 }
+
+/* The projected image can lean past its frame without adding page scroll. */
+.cut-home .premiere-main { overflow: clip; }
