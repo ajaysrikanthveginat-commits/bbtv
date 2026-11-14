@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test('entry, invitation, two-person chat, cinema mode, and session recovery', async ({page,browser}, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('Movie night.');
-  await page.getByRole('button', {name: 'Watch the preview'}).click();
+  await expect(page.getByRole('heading',{level:1})).toContainText('Two seats.');
+  await page.getByRole('button', {name: 'Play the preview'}).click();
   await expect(page.getByRole('dialog', {name: 'BBTV preview'})).toBeVisible();
-  await expect.poll(() => page.locator('.lobby-dialog video').evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0);
+  await expect.poll(() => page.locator("dialog[aria-label='BBTV preview'] video").evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0);
   await page.getByRole('button', {name: 'Close preview'}).click();
   await page.getByLabel('Your name').fill('Alex');
   await page.getByLabel('Room name').fill('Friday favorites');
@@ -35,6 +35,8 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await guest.getByRole('button', {name: 'Add to queue'}).click();
   await page.locator('.watch-queue summary').click();
   await expect(page.getByText('Next feature', {exact: true})).toBeVisible();
+  await guest.getByRole('button', {name: 'Vote for Next feature'}).click();
+  await expect(page.getByRole('button', {name: 'Vote for Next feature'})).toHaveText('1');
   await expect(guest.getByRole('button', {name: 'Remove Next feature'})).toHaveCount(0);
   await page.getByRole('button', {name: 'Remove Next feature'}).click();
   await expect(guest.getByText('Next feature', {exact: true})).toHaveCount(0);
@@ -103,7 +105,8 @@ test('actual media playback stays together after countdown, seek, and break', as
     if(await unblock.isVisible())await unblock.click();
     await expect.poll(async()=>await p.locator('.watch-canvas video').evaluate((v:HTMLVideoElement)=>v.currentTime>0)).toBe(true);
   }
-  await guest.getByRole('button',{name:'Take a break'}).click();
+  await guest.getByRole('button',{name:'1-minute intermission'}).click();
+  await expect(page.locator('.intermission-card')).toContainText('Intermission');
   await expect(page.locator('.watch-status')).toHaveText('Paused');
   const timeline = page.getByLabel('Playback position');
   const bounds = await timeline.boundingBox();

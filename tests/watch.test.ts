@@ -79,3 +79,24 @@ test("guests can suggest videos and only the host can load them", () => {
   assert.deepEqual(loaded.ready, []);
   assert.equal(loaded.playing, false);
 });
+
+test("a guest can start intermission without playback controls", () => {
+  const members = ["host", "guest"];
+  const state = { ...newWatchState(false), url: "/bbtv-preview.webm", playing: true, updatedAt: 1000, position: 9, ready: members };
+  const paused = changeWatch(state, {kind: "intermission"}, "guest", "host", members, 4000);
+  assert.equal(paused.playing, false);
+  assert.equal(paused.position, 12);
+  assert.equal(paused.breakUntil, 64000);
+  assert.deepEqual(paused.ready, []);
+});
+
+test("each person can vote for one suggestion and undo their vote", () => {
+  const members = ["host", "guest"];
+  const add = (state: WatchState, title: string) =>
+    changeWatch(state, { kind: "queue-add", title, url: `https://example.com/${title}.mp4` }, "guest", "host", members, 1);
+  const state = add(add(newWatchState(false), "First"), "Second");
+  const vote = (current: WatchState, index: number) => changeWatch(current, {kind: "queue-vote", id: state.queue[index].id}, "guest", "host", members, 1);
+  const switched = vote(vote(state, 0), 1);
+  assert.deepEqual(switched.queue.map(entry => entry.votes), [[], ["guest"]]);
+  assert.deepEqual(vote(switched, 1).queue.map(entry => entry.votes), [[], []]);
+});

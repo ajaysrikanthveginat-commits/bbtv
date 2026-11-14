@@ -11,6 +11,8 @@ import {
   Plus,
   X,
   LampDesk,
+  Coffee,
+  ThumbsUp,
 } from "lucide-react";
 import { SignalingService } from "../services/SignalingService";
 import { WatchAction, WatchState, watchPosition } from "../shared/watch";
@@ -138,6 +140,7 @@ export function WatchTogetherPlayer({
     : 0;
   const time = (seconds: number) =>
     `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+  const breakSeconds = Math.max(0, Math.ceil(((state?.breakUntil ?? 0) - now - offset.current) / 1000));
   const allReady =
     members.length >= 2 && members.every((id) => state?.ready.includes(id));
   return (
@@ -164,6 +167,12 @@ export function WatchTogetherPlayer({
         </span>
       </div>
       <div className="watch-canvas">
+        {breakSeconds > 0 && !state?.playing && (
+          <div className="intermission-card" role="status">
+            <Coffee size={24} /><strong>Intermission</strong>
+            <span>{time(breakSeconds)} · Press ready when you’re back</span>
+          </div>
+        )}
         {state?.url ? (
           <video
             key={state.url}
@@ -329,6 +338,9 @@ export function WatchTogetherPlayer({
         </button>
       </div>
       <div className="watch-options">
+        <button type="button" className="night-control" disabled={!connected || !loaded || breakSeconds > 0} onClick={() => send({kind:"intermission"})}>
+          <Coffee size={15} /> 1-minute intermission
+        </button>
         <button type="button" className="night-control ambient-toggle" aria-pressed={ambient} onClick={() => setAmbient((value) => !value)}>
           <LampDesk size={15} /> Ambient light
         </button>
@@ -376,10 +388,15 @@ export function WatchTogetherPlayer({
           {queue.length > 0 && <ol>{queue.map((entry) => (
             <li key={entry.id}>
               <b>{entry.title}</b>
-              {isHost && <div>
+              <div className="queue-actions">
+                <button type="button" className="night-control" aria-label={`Vote for ${entry.title}`} aria-pressed={entry.votes.includes(userId)} disabled={!connected} onClick={() => send({ kind: "queue-vote", id: entry.id })}>
+                  <ThumbsUp size={15} /> {entry.votes.filter(id => members.includes(id)).length}
+                </button>
+              {isHost && <>
                 <button type="button" className="night-control" disabled={!connected} onClick={() => send({ kind: "queue-load", id: entry.id })}>Load</button>
                 <button type="button" className="night-control" disabled={!connected} aria-label={`Remove ${entry.title}`} onClick={() => send({ kind: "queue-remove", id: entry.id })}><X size={16}/></button>
-              </div>}
+              </>}
+              </div>
             </li>
           ))}</ol>}
           <form onSubmit={(event) => {

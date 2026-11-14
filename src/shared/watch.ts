@@ -1,11 +1,13 @@
 export interface QueueEntry {
   id: string;
   title: string;
+  votes: string[];
   url: string;
 }
 
 export interface WatchState {
   queue: QueueEntry[];
+  breakUntil?: number;
   title?: string;
   url: string;
   position: number;
@@ -20,6 +22,8 @@ export type WatchAction =
   | { kind: "queue-add"; title: string; url: string }
   | { kind: "queue-remove" | "queue-load"; id: string }
   | { kind: "preview" }
+  | { kind: "queue-vote"; id: string }
+  | { kind: "intermission" }
   | { kind: "ready"; ready: boolean }
   | { kind: "start" }
   | { kind: "pause" }
@@ -50,8 +54,27 @@ export function changeWatch(
   const next = {
     ...state,
     ready: state.ready.filter((id) => members.includes(id)),
+    breakUntil: state.breakUntil && state.breakUntil > now ? state.breakUntil : undefined,
     revision: state.revision + 1,
   };
+  if (action.kind === "intermission") {
+    if (!state.url) throw new Error("Choose a video first.");
+    return {
+      ...next, playing: false, ready: [], position: watchPosition(state, now),
+      updatedAt: now, breakUntil: now + 60_000,
+    };
+  }
+  if (action.kind === "queue-vote") {
+    if (!state.queue.some((entry) => entry.id === action.id)) throw new Error("That video is no longer queued.");
+    return {
+      ...next,
+      queue: state.queue.map((entry) => {
+        const votes = entry.votes.filter((id) => id !== actor && members.includes(id));
+        if (entry.id === action.id && !entry.votes.includes(actor)) votes.push(actor);
+        return { ...entry, votes };
+      }),
+    };
+  }
   if (action.kind === "ready") {
     if (typeof action.ready !== "boolean" || !state.url)
       throw new Error("Choose a video first.");
@@ -70,7 +93,7 @@ export function changeWatch(
     if (state.queue.length >= 8) throw new Error("The queue has room for eight videos.");
     const url = validateVideoUrl(action.url);
     if (state.queue.some((entry) => entry.url === url)) throw new Error("That video is already queued.");
-    return { ...next, queue: [...state.queue, { id: String(next.revision), title, url }] };
+    return { ...next, queue: [...state.queue, { id: String(next.revision), title, url, votes: [] }] };
   }
   if (action.kind === "queue-remove" || action.kind === "queue-load") {
     if (actor !== host) throw new Error("Only the host can manage the queue.");
@@ -78,7 +101,7 @@ export function changeWatch(
     if (!entry) throw new Error("That video is no longer queued.");
     const queue = state.queue.filter((item) => item.id !== entry.id);
     return action.kind === "queue-remove" ? { ...next, queue } : {
-      ...next, queue, url: entry.url, title: entry.title, position: 0, playing: false, ready: [], updatedAt: now,
+      ...next, breakUntil: undefined, queue, url: entry.url, title: entry.title, position: 0, playing: false, ready: [], updatedAt: now,
     };
   }
   if (
@@ -90,12 +113,13 @@ export function changeWatch(
     throw new Error("Only the host can do that.");
   switch (action.kind) {
     case "preview":
-      return { ...next, url: "/bbtv-preview.webm", title: "BBTV Preview", playing: false, position: 0, updatedAt: now, ready: [] };
+      return { ...next, breakUntil: undefined, url: "/bbtv-preview.webm", title: "BBTV Preview", playing: false, position: 0, updatedAt: now, ready: [] };
     case "source": {
       const url = validateVideoUrl(action.url);
       return {
         ...next,
         url,
+        breakUntil: undefined,
         title: undefined,
         playing: false,
         position: 0,
@@ -115,7 +139,7 @@ export function changeWatch(
       )
         throw new Error("Both people must be ready before starting.");
       if (state.playing) return state;
-      return { ...next, playing: true, updatedAt: now + 3000 };
+      return { ...next, breakUntil: undefined, playing: true, updatedAt: now + 3000 };
     case "pause":
       return {
         ...next,
