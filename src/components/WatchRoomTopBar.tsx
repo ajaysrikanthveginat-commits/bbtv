@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { UserRole } from "../types/signaling";
 interface WatchRoomTopBarProps {
+  cinemaMode: boolean;
+  onToggleCinema: () => void;
   roomId: string;
   roomName: string;
   role: UserRole | "none";
@@ -79,6 +81,16 @@ export function WatchRoomTopBar(p: WatchRoomTopBarProps) {
           </div>
         </div>
         <div className="night-room-actions">
+          <button
+            className={
+              "night-control cinema-toggle " + (p.cinemaMode ? "active" : "")
+            }
+            aria-pressed={p.cinemaMode}
+            onClick={p.onToggleCinema}
+          >
+            <Film size={16} />
+            <span>{p.cinemaMode ? "Exit cinema" : "Cinema mode"}</span>
+          </button>
           <button
             className="night-control"
             onClick={copy}

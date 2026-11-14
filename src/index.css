@@ -716,3 +716,20 @@ button:disabled {
 .media-option svg{flex-shrink:0;color:#b89df2;margin-top:3px}
 .media-option h3{font-size:15px;font-weight:600;margin-bottom:6px}
 .media-option:disabled{opacity:.5}
+/* Focused cinema and invitation experience */
+.cinema-mode main { max-width:1440px; }
+.cinema-mode main>aside,.cinema-mode .participant-section { display:none; }
+.cinema-mode .watch-hint,.cinema-mode .watch-source,.cinema-mode .watch-options { display:none; }
+.cinema-mode .watch-canvas { max-height:70vh;aspect-ratio:auto;min-height: min(60vw,70vh); }
+.cinema-mode .watch-heading { padding:14px 24px; }
+.invite-ticket { display:flex;gap:20px;align-items:center;margin:26px 0;padding:24px;border:1px solid #c4b5fd3b;border-radius:18px;background:linear-gradient(120deg,#3e2a5c,#241b32);position:relative; }
+.invite-ticket svg{color:#c4b5fd}
+.invite-ticket span{font-size:8px;letter-spacing:1.8px;color:#c5b5d9}
+.invite-ticket strong{font-size:32px;display:block;letter-spacing:8px;font-weight:600;margin-top:8px}
+.invite-ticket p{font-size:10px}
+.invite-label{display:block;font-size:11px;color:#b6a7c4;margin-bottom:8px}
+.invite-link{width:100%;border:1px solid #ffffff18;background:#0d0913;border-radius:10px;padding:13px;color:#d5c6e6;font-size:12px}
+.invite-actions{display:flex;gap:10px;margin-top:18px}
+.invite-actions .night-primary{margin-top:0;flex:1}
+.invite-dialog .watch-hint{padding:14px 0 0}
+@media(max-width:720px){.cinema-toggle span{display:none}.cinema-mode .watch-canvas{min-height:55vw}.invite-ticket{padding:20px}.invite-ticket strong{font-size:27px}.media-dialog-body{padding:24px}}

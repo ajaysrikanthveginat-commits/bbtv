@@ -58,6 +58,12 @@ try {
     "ROOM_JOINED",
   );
   const roomId = joined.roomId;
+  assert.equal(typeof joined.resumeToken, 'string');
+  const intruder = await connect();
+  const rejected = await request(intruder, {type:'JOIN_ROOM', roomId, senderId:'host'}, 'ROOM_ERROR');
+  assert.match(rejected.message, /another browser/);
+  intruder.close();
+
   await request(
     guest,
     { type: "JOIN_ROOM", roomId, senderId: "guest" },

@@ -19,3 +19,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - run: ffmpeg -f lavfi -i testsrc=size=320x180:rate=10 -t 20 -c:v libvpx-vp9 -pix_fmt yuv420p tests/browser/fixture.webm
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-validation
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

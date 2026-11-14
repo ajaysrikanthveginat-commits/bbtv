@@ -47,6 +47,7 @@ export interface LeaveRoomMessage extends BaseSignalingMessage {
 
 export interface RoomJoinedMessage extends BaseSignalingMessage {
   type: 'ROOM_JOINED';
+  resumeToken?: string;
   role: UserRole;
   remoteUserId?: string | null;
 }

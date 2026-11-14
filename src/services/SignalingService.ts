@@ -58,6 +58,9 @@ export class SignalingService {
       this.socket.onmessage = (event: MessageEvent) => {
         try {
           const message: SignalingMessage = JSON.parse(event.data);
+          if (message.type === 'ROOM_JOINED' && message.resumeToken) {
+            try { sessionStorage.setItem('wt_resume_' + message.roomId, message.resumeToken); } catch { /* reconnect will require a fresh join */ }
+          }
           this.rxCount++;
           if ((message as any).type !== 'PONG') {
             console.log(`[WS RX] type=${message.type} room=${message.roomId || ''} sender=${message.senderId || ''}`);
@@ -97,7 +100,11 @@ export class SignalingService {
       if ((message as any).type !== 'PING') {
         console.log(`[WS TX] type=${message.type} room=${message.roomId || ''} sender=${message.senderId || ''}`);
       }
-      this.socket.send(JSON.stringify(message));
+      let resumeToken: string | null = null;
+      if (message.type === 'JOIN_ROOM' || message.type === 'RECONNECT_ROOM') {
+        try { resumeToken = sessionStorage.getItem('wt_resume_' + message.roomId); } catch { /* storage may be unavailable */ }
+      }
+      this.socket.send(JSON.stringify({ ...message, ...(resumeToken ? { resumeToken } : {}) }));
       return true;
     } catch (err) {
       console.error('[SignalingService] Failed to send message:', err);

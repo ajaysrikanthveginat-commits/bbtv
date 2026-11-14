@@ -39,13 +39,13 @@ export default function App() {
   });
 
   const [displayName, setDisplayName] = useState<string>(() => {
-    return localStorage.getItem('wt_display_name') || 'Ajay';
+    return localStorage.getItem('wt_display_name') || '';
   });
 
   const [localUserId] = useState<string>(() => {
     const stored = sessionStorage.getItem('wt_user_id');
     if (stored) return stored;
-    const generated = 'usr_' + Math.random().toString(36).substring(2, 9);
+    const generated = 'usr_' + crypto.randomUUID();
     sessionStorage.setItem('wt_user_id', generated);
     return generated;
   });
@@ -63,6 +63,7 @@ export default function App() {
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const [isDiagnosticsModalOpen, setIsDiagnosticsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [cinemaMode, setCinemaMode] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState<'chat' | 'people'>('chat');
 
   // Chat messages
@@ -278,7 +279,17 @@ export default function App() {
     }, uid);
     webrtcRef.current = webrtc;
 
+    let attemptedRestore = false;
     const unbindConnection = signaling.onConnectionChange((connected) => {
+      if (connected && !attemptedRestore) {
+        attemptedRestore = true;
+        const savedRoom = sessionStorage.getItem('wt_room_id');
+        const linkedRoom = new URLSearchParams(window.location.search).get('room');
+        if (savedRoom && (!linkedRoom || linkedRoom.toUpperCase() === savedRoom) && sessionStorage.getItem('wt_resume_' + savedRoom)) {
+          setIsSubmitting(true);
+          signaling.send({type:'RECONNECT_ROOM',roomId:savedRoom,senderId:uid});
+        }
+      }
       setWsConnected(connected);
       setDiagnostics((prev) => ({ ...prev, wsConnected: connected }));
       addLog(
@@ -945,9 +956,11 @@ export default function App() {
         />
       ) : (
         /* 2. WATCH ROOM (When in room) */
-        <div className="room-shell flex-1 flex flex-col min-h-screen">
+        <div className={`room-shell flex-1 flex flex-col min-h-screen ${cinemaMode ? 'cinema-mode' : ''}`}>
           {/* Top Bar */}
           <WatchRoomTopBar
+            cinemaMode={cinemaMode}
+            onToggleCinema={() => setCinemaMode(value => !value)}
             roomId={roomId}
             roomName={roomName}
             role={role}

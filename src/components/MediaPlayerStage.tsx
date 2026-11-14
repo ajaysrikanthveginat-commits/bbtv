@@ -74,7 +74,7 @@ export function MediaPlayerStage({
       )}
 
       {/* WEBRTC PARTICIPANT VIDEO GRID (Real Phase 1 Video Feeds) */}
-      <div className="space-y-2">
+      <div className="participant-section space-y-2">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">

@@ -9,6 +9,7 @@ import { newWatchState, changeWatch, watchPosition, type WatchState } from './sr
 interface RoomData {
   watch: WatchState;
   roomName: string;
+  resumeTokens: Map<string, string>;
   roomId: string;
   hostId: string;
   participantId: string | null;
@@ -41,7 +42,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     phase: 'Phase 1 - Room Lifecycle & WebRTC Baseline',
     activeRooms: rooms.size,
-    roomList: Array.from(rooms.keys()),
+
     timestamp: new Date().toISOString(),
   });
 });
@@ -56,14 +57,14 @@ app.get('/api/rooms/:roomId', (req, res) => {
   res.json({
     exists: true,
     roomId: room.roomId,
-    hostId: room.hostId,
+
     hasParticipant: room.participantId !== null,
     connectedClients: room.clients.size,
   });
 });
 
 // Setup WebSocket server on the same HTTP server at path /ws
-const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+const wss = new WebSocketServer({ server: httpServer, path: '/ws', maxPayload: 64 * 1024 });
 
 function generateRoomId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -79,6 +80,14 @@ function generateRoomId(): string {
 }
 
 function sendTo(ws: WebSocket, message: object): void {
+  if ('type' in message && message.type === 'ROOM_JOINED') {
+    const session = socketSessions.get(ws);
+    const room = session?.roomId ? rooms.get(session.roomId) : undefined;
+    if (room && session) {
+      if (!room.resumeTokens.has(session.userId)) room.resumeTokens.set(session.userId, crypto.randomBytes(32).toString('hex'));
+      message = { ...message, resumeToken: room.resumeTokens.get(session.userId) };
+    }
+  }
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(message));
   }
@@ -167,6 +176,17 @@ wss.on('connection', (ws: WebSocket) => {
       return;
     }
 
+    // Rejoining an existing identity requires the secret issued to that browser.
+    if (msg.type === 'JOIN_ROOM' || msg.type === 'RECONNECT_ROOM') {
+      const target = typeof msg.roomId === 'string' ? rooms.get(msg.roomId.toUpperCase().trim()) : undefined;
+      const expected = target?.resumeTokens.get(msg.senderId);
+      if (expected && target?.clients.get(msg.senderId) !== ws && msg.resumeToken !== expected) {
+        sendTo(ws, { type: 'ROOM_ERROR', roomId: target?.roomId, senderId: 'SERVER', message: 'This session belongs to another browser. Open a fresh tab to join as a guest.' });
+        return;
+      }
+    }
+    if (msg.senderId !== undefined && (typeof msg.senderId !== 'string' || msg.senderId.length > 100)) return;
+    if (msg.roomId !== undefined && typeof msg.roomId !== 'string') return;
     // Allow client to supply a persistent client identifier if provided
     const clientSpecifiedId = msg.senderId || userId;
     if (session.roomId && session.userId !== clientSpecifiedId) return;
@@ -188,6 +208,7 @@ wss.on('connection', (ws: WebSocket) => {
           participantId: null,
           clients: new Map([[clientSpecifiedId, ws]]),
           cleanupTimer: null,
+          resumeTokens: new Map(),
           roomName: typeof msg.roomName === 'string' ? msg.roomName.trim().slice(0,60) || 'Movie night' : 'Movie night',
           watch: newWatchState(msg.allowControl !== false),
         };
@@ -343,6 +364,9 @@ wss.on('connection', (ws: WebSocket) => {
           room.cleanupTimer = null;
         }
 
+        if (room.resumeTokens.has(clientSpecifiedId) && room.hostId !== clientSpecifiedId && !room.participantId && room.clients.size < 2) {
+          room.participantId = clientSpecifiedId;
+        }
         if (room.hostId !== clientSpecifiedId && room.participantId !== clientSpecifiedId) {
           sendTo(ws, { type: 'ROOM_ERROR', roomId: targetRoomId, senderId: 'SERVER', message: 'Please leave and rejoin this room using its code.' });
           return;
@@ -411,7 +435,7 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         // 2. Validate sender belongs to room
-        if (!room.clients.has(clientSpecifiedId)) {
+        if (room.clients.get(clientSpecifiedId) !== ws) {
           console.warn(`[CHAT REJECTED] Sender ${clientSpecifiedId} is not in room ${targetRoomId}`);
           sendTo(ws, {
             type: 'ROOM_ERROR',
@@ -423,7 +447,7 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         // 3. Validate message is valid
-        if (!chatText) {
+        if (!chatText || chatText.length > 2000) {
           console.warn(`[CHAT REJECTED] Empty chat message from ${clientSpecifiedId}`);
           return;
         }

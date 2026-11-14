@@ -179,6 +179,7 @@ export function Sidebar({
           >
             <input
               type="text"
+              maxLength={2000}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               aria-label="Message your room" placeholder="Say something…"
