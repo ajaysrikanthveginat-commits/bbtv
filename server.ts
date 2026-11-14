@@ -40,7 +40,8 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    phase: 'Phase 1 - Room Lifecycle & WebRTC Baseline',
+    service: 'bbtv',
+    version: 'movie-night-1',
     activeRooms: rooms.size,
 
     timestamp: new Date().toISOString(),
@@ -471,11 +472,11 @@ wss.on('connection', (ws: WebSocket) => {
           type: 'CHAT_MESSAGE',
           roomId: targetRoomId,
           senderId: clientSpecifiedId,
-          senderName: msg.senderName || (clientSpecifiedId === room.hostId ? 'Host' : 'Friend'),
+          senderName: typeof msg.senderName === 'string' ? msg.senderName.trim().slice(0, 40) || 'Friend' : (clientSpecifiedId === room.hostId ? 'Host' : 'Friend'),
           message: chatText,
-          id: msg.id || ('msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
-          time: msg.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timestamp: msg.timestamp || Date.now(),
+          id: typeof msg.id === 'string' ? msg.id.slice(0, 100) : crypto.randomUUID(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now(),
         };
 
         // Broadcast to every OTHER client in the SAME ROOM
@@ -506,6 +507,7 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         if (room.clients.get(session.userId) !== ws) return;
+        if ((msg.type === 'SCREEN_SHARE_STARTED' || msg.type === 'SCREEN_SHARE_STOPPED') && room.hostId !== clientSpecifiedId) return;
         if (msg.type === 'SCREEN_SHARE_STARTED') {
           room.watch = { ...room.watch, position: watchPosition(room.watch, Date.now()), playing: false, ready: [], updatedAt: Date.now(), revision: room.watch.revision + 1 };
         }

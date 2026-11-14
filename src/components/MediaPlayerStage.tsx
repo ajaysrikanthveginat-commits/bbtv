@@ -78,7 +78,7 @@ export function MediaPlayerStage({
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-              The best seats in the house
+              Good company
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-[#8b5cf6] border border-[#8b5cf6]/20">
               Just us
@@ -88,15 +88,15 @@ export function MediaPlayerStage({
           {!localStream && (
             <button
               onClick={onEnableMedia}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+              className="text-xs font-semibold text-violet-300 hover:text-violet-200 cursor-pointer"
             >
-              Enable Camera & Microphone
+              Turn on your call
             </button>
           )}
         </div>
 
         {/* 2-Column Participant Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="call-grid">
           {/* REMOTE PARTICIPANT TILE */}
           <RemoteVideo
             stream={remoteStream}

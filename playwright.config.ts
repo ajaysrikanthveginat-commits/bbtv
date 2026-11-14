@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir:'./tests/browser', timeout:45000, retries:1, workers:1,
   reporter:[['list'],['html',{open:'never'}]],
-  use:{launchOptions:{args:['--autoplay-policy=no-user-gesture-required']},baseURL:'http://127.0.0.1:3141',trace:'retain-on-failure',screenshot:'only-on-failure'},
+  use:{launchOptions:{executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH,args:['--autoplay-policy=no-user-gesture-required','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']},permissions:['camera','microphone'],baseURL:'http://127.0.0.1:3141',trace:'retain-on-failure',screenshot:'only-on-failure'},
   webServer:{command:'node dist/server.cjs',env:{NODE_ENV:'production',PORT:'3141'},url:'http://127.0.0.1:3141/api/health',reuseExistingServer:false},
   projects:[{name:'desktop',use:{viewport:{width:1440,height:1000}}},{name:'mobile',use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}}]
 });

@@ -85,6 +85,7 @@ export function WatchRoomTopBar(p: WatchRoomTopBarProps) {
             className={
               "night-control cinema-toggle " + (p.cinemaMode ? "active" : "")
             }
+            aria-label={p.cinemaMode ? "Exit cinema mode" : "Cinema mode"}
             aria-pressed={p.cinemaMode}
             onClick={p.onToggleCinema}
           >

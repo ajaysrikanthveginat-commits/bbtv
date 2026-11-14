@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Volume2, AlertTriangle, Video, Users, CheckCircle2, User, VolumeX } from 'lucide-react';
+import { Volume2, User } from 'lucide-react';
 
 interface RemoteVideoProps {
   stream: MediaStream | null;
@@ -287,168 +287,16 @@ export function RemoteVideo({
     }
   };
 
-  const videoTracks = stream ? stream.getVideoTracks() : [];
-  const audioTracks = stream ? stream.getAudioTracks() : [];
-  const isVideoDecoding = resolution !== null && resolution.width > 0 && resolution.height > 0;
-  const hasLiveVideo = videoTracks.length > 0 && videoTracks[0].enabled;
-  const hasLiveAudio = audioTracks.length > 0 && audioTracks[0].enabled;
-
-  return (
-    <div
-      className={`group relative flex flex-col bg-[#11131a] border border-white/10 rounded-xl overflow-hidden shadow-2xl transition-all ${className}`}
-    >
-      {/* Top Header Bar */}
-      <div className="bg-[#171924]/90 backdrop-blur-md px-3 py-2 border-b border-white/5 flex items-center justify-between text-xs text-zinc-300">
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              stream ? 'bg-[#8b5cf6] animate-pulse' : 'bg-zinc-600'
-            }`}
-          />
-          <span className="font-semibold text-white tracking-wide text-xs">
-            {remoteUserId ? userName : 'Friend'}
-          </span>
-          {remoteUserId && (
-            <span className="text-[#8b5cf6] font-mono text-[10px] bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 px-1.5 py-0.5 rounded">
-              Peer: {remoteUserId.slice(0, 6)}
-            </span>
-          )}
-        </div>
-
-        {stream && (
-          isVideoDecoding ? (
-            <span className="flex items-center gap-1 text-[10px] bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded">
-              <CheckCircle2 className="w-3 h-3" />
-              <span className="hidden sm:inline">Decoded {resolution.width}×{resolution.height}</span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] bg-amber-950/80 text-amber-400 border border-amber-800/50 px-2 py-0.5 rounded">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-              <span className="hidden sm:inline">Awaiting Video Decode</span>
-            </span>
-          )
-        )}
-      </div>
-
-      {/* Video Viewport */}
-      <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-        {/* Hidden dedicated audio element for resilient unmuted audio playback */}
-        <audio ref={audioRef} autoPlay playsInline className="hidden" />
-
-        {stream ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-zinc-500 gap-3 p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-500">
-              <User className="w-6 h-6 text-zinc-400" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-zinc-300">Awaiting Remote Participant</p>
-              <p className="text-[11px] text-zinc-500 mt-1 max-w-xs">
-                Invite a friend using your room code to join video and audio.
-              </p>
-            </div>
-            {onInviteClick && (
-              <button
-                onClick={onInviteClick}
-                className="mt-1 text-xs font-semibold text-white bg-[#8b5cf6] hover:bg-[#7c3aed] px-3 py-1.5 rounded-lg transition-all shadow-md shadow-[#8b5cf6]/20 cursor-pointer"
-              >
-                Invite Friend
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Browser Audio Autoplay Blocked Warning Banner */}
-        {audioPlaybackBlocked && (
-          <div className="absolute top-2 left-2 right-2 bg-black/90 backdrop-blur-md border border-amber-500/60 rounded-lg p-2.5 flex items-center justify-between z-20 shadow-xl animate-fade-in">
-            <div className="flex items-center gap-2 min-w-0 pr-2">
-              <VolumeX className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
-              <div className="text-[11px] text-zinc-200 truncate">
-                <span className="font-semibold text-amber-300">Audio Blocked by Browser: </span>
-                Click to hear friend.
-              </div>
-            </div>
-            <button
-              onClick={handleEnableAudioGesture}
-              className="flex items-center gap-1.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-semibold px-3 py-1 rounded-md text-xs shadow-md shadow-[#8b5cf6]/25 transition-all cursor-pointer shrink-0"
-            >
-              <Volume2 className="w-3.5 h-3.5" />
-              <span>Enable Audio</span>
-            </button>
-          </div>
-        )}
-
-        {/* Participant Status Badges overlaid on bottom-left */}
-        {stream && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 z-10">
-            <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium backdrop-blur-md ${
-                hasLiveVideo
-                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/50'
-                  : 'bg-zinc-900/90 text-zinc-400 border border-white/10'
-              }`}
-            >
-              <Video className="w-3 h-3" />
-              <span>{hasLiveVideo ? 'CAM LIVE' : 'NO VIDEO'}</span>
-            </div>
-
-            <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium backdrop-blur-md ${
-                audioPlaybackBlocked
-                  ? 'bg-amber-950/90 text-amber-300 border border-amber-700/60'
-                  : audioPlaybackActive
-                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/50'
-                  : hasLiveAudio
-                  ? 'bg-zinc-900/90 text-zinc-300 border border-white/10'
-                  : 'bg-rose-950/90 text-rose-300 border border-rose-800/60'
-              }`}
-            >
-              {audioPlaybackBlocked ? (
-                <VolumeX className="w-3 h-3 text-amber-400 animate-pulse" />
-              ) : audioPlaybackActive ? (
-                <Volume2 className="w-3 h-3 text-emerald-400" />
-              ) : (
-                <VolumeX className="w-3 h-3 text-rose-400" />
-              )}
-              <span>
-                {audioPlaybackBlocked
-                  ? 'AUDIO BLOCKED'
-                  : audioPlaybackActive
-                  ? 'AUDIO ACTIVE'
-                  : hasLiveAudio
-                  ? 'AUDIO READY'
-                  : 'MUTED'}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Remote Stream ID tag */}
-        {stream && (
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] text-[#8b5cf6] font-mono border border-white/5">
-            Stream: {stream.id.slice(0, 8)}...
-          </div>
-        )}
-      </div>
-
-      {/* Footer Details */}
-      <div className="bg-[#15121c] px-3 py-1.5 border-t border-white/5 text-[10px] text-zinc-500 flex flex-wrap items-center justify-between gap-1">
-        <div>
-          <span>Tracks: <strong className="text-zinc-300 font-mono">{videoTracks.length}V / {audioTracks.length}A</strong></span>
-        </div>
-        {resolution && (
-          <div className="text-zinc-400 font-mono text-[9px]">
-            {resolution.width}x{resolution.height}
-          </div>
-        )}
-      </div>
+  const showVideo = !!stream && !!resolution?.width && stream.getVideoTracks().some(track => track.enabled && !track.muted && track.readyState === 'live');
+  return <div className={`call-tile ${className}`}>
+    <div className="call-viewport">
+      <audio ref={audioRef} autoPlay playsInline className="hidden" />
+      <video ref={videoRef} autoPlay playsInline muted className={!showVideo ? 'call-video-hidden' : ''} />
+      {!showVideo && <div className="call-placeholder"><User size={24}/><span>{remoteUserId ? 'Together, camera optional' : 'A seat for your friend'}</span>
+        {!remoteUserId && onInviteClick && <button className="call-invite" onClick={onInviteClick}>Invite a friend</button>}
+      </div>}
+      {audioPlaybackBlocked && <button className="call-audio-unblock" onClick={handleEnableAudioGesture}><Volume2 size={14}/> Tap to hear your friend</button>}
     </div>
-  );
+    <div className="call-caption"><span>{remoteUserId ? userName : 'Your friend'}</span><small>{remoteUserId ? 'In the room' : 'Seat available'}</small></div>
+  </div>;
 }

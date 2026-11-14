@@ -54,7 +54,8 @@ export function Sidebar({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const area = messagesEndRef.current?.parentElement;
+    if (area) area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,7 +68,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`w-full lg:w-80 xl:w-96 bg-[#15121c] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl ${className}`}
+      className={`room-sidebar w-full lg:w-80 xl:w-96 bg-[#15121c] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl ${className}`}
     >
       {/* Top Tab Bar Header */}
       <div className="bg-[#1c1726] p-2 border-b border-white/10 flex items-center justify-between">
@@ -118,7 +119,7 @@ export function Sidebar({
       {activeTab === 'chat' && (
         <div className="flex-1 flex flex-col min-h-0 bg-[#100e16]">
           {/* Messages Container */}
-          <div className="flex-1 p-3 overflow-y-auto space-y-3 min-h-[300px]">
+          <div className="flex-1 p-3 overflow-y-auto space-y-3 min-h-0">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500 space-y-2">
                 <MessageSquare className="w-8 h-8 text-zinc-600 mb-1" />

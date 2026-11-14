@@ -195,7 +195,7 @@ export function WatchTogetherPlayer({
               }
               setDuration(d);
             }}
-            onCanPlay={() => setLoaded(true)}
+            onCanPlay={(event) => setLoaded(Number.isFinite(event.currentTarget.duration) && event.currentTarget.duration > 0)}
             onTimeUpdate={(event) =>
               setPosition(event.currentTarget.currentTime)
             }

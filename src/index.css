@@ -733,3 +733,20 @@ button:disabled {
 .invite-actions .night-primary{margin-top:0;flex:1}
 .invite-dialog .watch-hint{padding:14px 0 0}
 @media(max-width:720px){.cinema-toggle span{display:none}.cinema-mode .watch-canvas{min-height:55vw}.invite-ticket{padding:20px}.invite-ticket strong{font-size:27px}.media-dialog-body{padding:24px}}
+/* Calm, compact call tiles; technical diagnostics stay in Connection help. */
+.call-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.call-tile{border:1px solid #ffffff12;border-radius:16px;overflow:hidden;background:#17121f;min-width:0}
+.call-viewport{position:relative;height:150px;background:radial-gradient(ellipse at 50% 120%,#382847,#131018);overflow:hidden}
+.call-viewport video{width:100%;height:100%;object-fit:cover}
+.call-video-hidden{opacity:0}
+.call-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;color:#aa98c0;font-size:11px;text-align:center;padding:10px}
+.call-placeholder svg{color:#b99ced}
+.call-caption{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 13px;font-size:12px}
+.call-caption small{font-size:10px;color:#9c8daa}
+.call-caption>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-invite{font-size:10px;color:#d6c1fa;text-decoration:underline;cursor:pointer}
+.call-audio-unblock{position:absolute;bottom:8px;left:8px;right:8px;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:#7c3aed;border-radius:8px;font-size:10px;color:white;cursor:pointer}
+.room-sidebar{height:650px;max-height:calc(100dvh - 210px);position:sticky;top:20px;align-self:flex-start}
+@media(min-width:1024px){.watch-canvas{aspect-ratio:auto;height:clamp(280px,42vh,560px)}}
+@media(max-width:1023px){.room-sidebar{position:static;max-height:none;height:420px}.call-viewport{height:130px}}
+@media(max-width:420px){.call-caption{font-size:10px;padding:9px}.call-caption small{font-size:9px}.call-placeholder{font-size:10px}}
