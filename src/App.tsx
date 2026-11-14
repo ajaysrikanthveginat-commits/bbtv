@@ -609,7 +609,7 @@ export default function App() {
         `getUserMedia granted: ${vTracks.length} video, ${aTracks.length} audio tracks`,
         'success'
       );
-      addSystemMessage(`${displayName} enabled camera and microphone.`);
+      addSystemMessage(`${displayName} joined ${audioOnly ? "with voice only" : "with camera and microphone"}.`);
 
       // If we are already in a room with a remote peer and peer connection has not yet negotiated, initiate offer
       const activeRemoteUser = remoteUserIdRef.current || remoteUserId;
