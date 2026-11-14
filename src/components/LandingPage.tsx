@@ -1,13 +1,6 @@
-import { CinemaMarquee } from "./CinemaMarquee";
-import React, { useRef, useState } from "react";
-import {
-  ArrowRight,
-  Film,
-  Play,
-  X,
-
-  Activity,
-} from "lucide-react";
+import { useRef, useState } from "react";
+import type { FormEvent, PointerEvent } from "react";
+import { ArrowDownRight, ArrowRight, AudioLines, Clapperboard, Play, X } from "lucide-react";
 
 interface LandingPageProps {
   wsConnected: boolean;
@@ -16,202 +9,78 @@ interface LandingPageProps {
   initialRoomCode?: string;
   isSubmitting?: boolean;
   onToggleDiagnostics?: () => void;
-  onCreateRoom: (params: {
-    displayName: string;
-    roomName: string;
-    allowControl: boolean;
-    allowShare: boolean;
-  }) => void;
-  onJoinRoom: (targetRoomId: string, displayName: string) => void;
+  onCreateRoom: (params: { displayName: string; roomName: string; allowControl: boolean; allowShare: boolean }) => void;
+  onJoinRoom: (code: string, name: string) => void;
   onClearError: () => void;
 }
 
-export function LandingPage({
-  wsConnected,
-  error,
-  defaultUserName,
-  initialRoomCode,
-  isSubmitting = false,
-  onToggleDiagnostics,
-  onCreateRoom,
-  onJoinRoom,
-  onClearError,
-}: LandingPageProps) {
-  const previewDialog = useRef<HTMLDialogElement>(null);
-  const previewVideo = useRef<HTMLVideoElement>(null);
-  const [mode, setMode] = useState<"create" | "join">(
-    initialRoomCode ? "join" : "create",
-  );
-  const [name, setName] = useState(defaultUserName || "");
-  const [roomName, setRoomName] = useState("Movie night");
-  const [code, setCode] = useState(initialRoomCode || "");
-  const [allowControl, setAllowControl] = useState(true);
-  const allowShare = false;
-  const submit = (event: React.FormEvent) => {
+export function LandingPage(p: LandingPageProps) {
+  const [mode, setMode] = useState(p.initialRoomCode ? "join" : "create");
+  const [name, setName] = useState(p.defaultUserName);
+  const [code, setCode] = useState(p.initialRoomCode ?? "");
+  const [room, setRoom] = useState("Movie night");
+  const ticket = useRef<HTMLElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const preview = useRef<HTMLVideoElement>(null);
+  function moveProjection(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+    event.currentTarget.style.setProperty("--projection-tilt", `rotateX(${y * -4}deg) rotateY(${x * 6}deg)`);
+  }
+  function submit(event: FormEvent) {
     event.preventDefault();
-    if (!wsConnected || isSubmitting || !name.trim()) return;
+    if (!p.wsConnected || p.isSubmitting || !name.trim()) return;
     if (mode === "join") {
-      if (code.trim()) onJoinRoom(code.trim().toUpperCase(), name.trim());
-    } else
-      onCreateRoom({
-        displayName: name.trim(),
-        roomName: roomName.trim() || "Movie night",
-        allowControl,
-        allowShare,
-      });
-  };
+      if (code.trim()) p.onJoinRoom(code.trim().toUpperCase(), name.trim());
+    } else {
+      p.onCreateRoom({ displayName: name.trim(), roomName: room.trim() || "Movie night", allowControl: true, allowShare: false });
+    }
+  }
   return (
-    <div className="night-home">
-      <header className="night-nav">
-        <a className="night-brand" href="/" aria-label="BBTV home">
-          <span>
-            <Film size={22} />
-          </span>
-          BBTV<span className="night-brand-note">Cinema Club</span>
-        </a>
-        <div className="night-connection" role="status">
-          <i className={wsConnected ? "online" : ""} />
-          {wsConnected ? "Connected" : "Connecting…"}
-        </div>
+    <div className="intermission">
+      <header className="premiere-nav">
+        <a className="premiere-brand" href="/" aria-label="BBTV home"><Clapperboard size={19} /> BBTV<span> / WATCH TOGETHER</span></a>
+        <span className="premiere-status" role="status"><i data-online={p.wsConnected} />{p.wsConnected ? "Online" : "Connecting"}</span>
       </header>
-      <main className="night-main">
-        <section className="night-hero">
-          <div className="night-intro">
-            <h1>{initialRoomCode ? <>Your seat<br /> <em>is saved.</em></> : <>Movie night.<br /><em>In sync.</em></>}</h1>
-            <p>{initialRoomCode
-              ? "Enter your name to join your friend’s screening."
-              : "Watch in sync, talk through the twists, and share the good parts."}</p>
-            {!initialRoomCode && <button type="button" className="night-control lobby-preview" onClick={() => {
-              previewDialog.current?.showModal();
-              previewVideo.current?.play().catch(() => {});
-            }}><Play size={15} /> Watch the preview</button>}
+      <main className="premiere-main">
+        <div className="premiere-hero" onPointerMove={moveProjection} onPointerLeave={(event) => event.currentTarget.style.removeProperty("--projection-tilt")}>
+          <div className="premiere-image" aria-hidden="true" />
+          <div className="premiere-copy">
+            <h1>{p.initialRoomCode ? <>Your seat<br /><em>is waiting.</em></> : <>Two seats.<br /><em>One screen.</em></>}</h1>
+            <p>{p.initialRoomCode ? "Join your friend’s screening." : "Start a private screening with a friend. Pick a film together, call, and press play in sync."}</p>
+            <button type="button" className="premiere-trailer" onClick={() => { dialog.current?.showModal(); preview.current?.play().catch(() => {}); }}><Play size={15} /> Play the preview</button>
           </div>
-          <CinemaMarquee />
-          <dialog className="media-dialog lobby-dialog" ref={previewDialog} aria-labelledby="lobby-preview-title" onClose={() => previewVideo.current?.pause()}>
-            <div className="media-dialog-body">
-              <button type="button" className="night-control media-close" aria-label="Close preview" onClick={() => previewDialog.current?.close()}><X size={18} /></button>
-              <h2 id="lobby-preview-title">BBTV preview</h2>
-              <video ref={previewVideo} src="/bbtv-preview.webm" controls playsInline preload="none" />
-            </div>
-          </dialog>
-          <section className="night-entry" aria-labelledby="entry-heading">
-            <div className="night-entry-icon">
-              <Film size={23} />
-            </div>
-            <h2 id="entry-heading">
-              {mode === "create" ? "Get a room" : "Join your friend"}
-            </h2>
-            <p>
-              {mode === "create"
-                ? "Create a private screening for two."
-                : "Use the room code from your invitation."}
-            </p>
-            <div className="night-tabs" aria-label="Room action">
-              {(["create", "join"] as const).map((tab) => (
-                <button
-                  type="button"
-                  key={tab}
-                  aria-pressed={mode === tab}
-                  onClick={() => {
-                    setMode(tab);
-                    onClearError();
-                  }}
-                >
-                  {tab === "create" ? "Start a room" : "Join a room"}
-                </button>
-              ))}
-            </div>
-            {error && (
-              <div className="night-error" role="alert">
-                {error}
-                <button onClick={onClearError} type="button">
-                  Dismiss
-                </button>
-              </div>
-            )}
-            <form onSubmit={submit}>
-              <label htmlFor="display-name">Your name</label>
-              <input
-                id="display-name"
-                autoComplete="given-name"
-                required
-                maxLength={40}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="What should we call you?"
-              />
-              {mode === "create" ? (
-                <>
-                  <label htmlFor="room-name">
-                    Room name <span>optional</span>
-                  </label>
-                  <input
-                    id="room-name"
-                    value={roomName}
-                    maxLength={60}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    placeholder="Friday night favorites"
-                  />
-                  <details className="night-permissions">
-                    <summary>Room permissions</summary>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={allowControl}
-                        onChange={(e) => setAllowControl(e.target.checked)}
-                      />{" "}
-                      Let your guest control playback
-                    </label>
-
-                  </details>
-                </>
-              ) : (
-                <>
-                  <label htmlFor="room-code">Room code</label>
-                  <input
-                    id="room-code"
-                    required
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={code}
-                    maxLength={12}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. Q6GZ87"
-                  />
-                  <p className="night-form-hint">
-                    Your friend can find this at the top of their room.
-                  </p>
-                </>
-              )}
-              <button
-                className="night-primary"
-                disabled={
-                  !wsConnected ||
-                  isSubmitting ||
-                  !name.trim() ||
-                  (mode === "join" && !code.trim())
-                }
-              >
-                {isSubmitting
-                  ? "Getting your room ready…"
-                  : mode === "create"
-                    ? "Start movie night"
-                    : "Join movie night"}
-                <ArrowRight size={18} />
-              </button>
-              
-            </form>
-          </section>
+          <button type="button" className="premiere-jump" aria-label="Go to room setup" onClick={() => { ticket.current?.scrollIntoView({block:"center"}); ticket.current?.querySelector("input")?.focus({preventScroll:true}); }}><ArrowDownRight size={30} /></button>
+        </div>
+        <section ref={ticket} className="premiere-ticket" aria-labelledby="ticket-title">
+          <div className="ticket-tabs" aria-label="Room action">
+            <button type="button" aria-pressed={mode === "create"} onClick={() => {setMode("create"); p.onClearError();}}>Create room</button>
+            <button type="button" aria-pressed={mode === "join"} onClick={() => {setMode("join"); p.onClearError();}}>Join room</button>
+          </div>
+          <form onSubmit={submit}>
+            <h2 id="ticket-title">{mode === "create" ? "Open a screening" : "Enter your room"}</h2>
+            {p.error && <p role="alert">{p.error}</p>}
+            <label>Your name<input autoComplete="given-name" required maxLength={40} value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" /></label>
+            {mode === "create"
+              ? <label>Room name<input maxLength={60} value={room} onChange={e=>setRoom(e.target.value)} placeholder="Friday screening" /></label>
+              : <label>Room code<input required autoComplete="off" spellCheck={false} maxLength={12} value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="e.g. Q6GZ87" /></label>}
+            <button className="ticket-submit" disabled={!p.wsConnected || p.isSubmitting || !name.trim() || (mode === "join" && !code.trim())}>
+              {p.isSubmitting ? "Opening…" : mode === "create" ? "Start movie night" : "Join movie night"}<ArrowRight size={19} />
+            </button>
+          </form>
+          <p className="ticket-note"><AudioLines size={15} /> Camera and microphone are optional.</p>
         </section>
       </main>
-      <footer className="night-footer">
-        <span>BBTV Cinema Club</span>
-        {onToggleDiagnostics && (
-          <button onClick={onToggleDiagnostics}>
-            <Activity size={14} /> Connection help
-          </button>
-        )}
-      </footer>
+      <footer className="premiere-footer"><span>BBTV</span>{p.onToggleDiagnostics && <button onClick={p.onToggleDiagnostics}>Connection help</button>}</footer>
+      <dialog ref={dialog} aria-label="BBTV preview" className="media-dialog" onClose={() => preview.current?.pause()}>
+        <div className="media-dialog-body">
+          <button className="night-control media-close" aria-label="Close preview" onClick={() => dialog.current?.close()}><X size={19}/></button>
+          <h2>BBTV preview</h2>
+          <video ref={preview} src="/bbtv-preview.webm" controls playsInline preload="none" style={{width:"100%"}} />
+        </div>
+      </dialog>
     </div>
   );
 }
