@@ -99,8 +99,20 @@ try {
   assert.match(denied.message, /host/);
   const pause = await action(guest, "guest", { kind: "ready", ready: false });
   assert.equal(pause.state.playing, false);
+  const departure = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Server did not announce guest departure")), 3000);
+    const receive = (raw) => {
+      const message = JSON.parse(raw);
+      if (message.type === "USER_LEFT" && message.userId === "guest") {
+        clearTimeout(timer);
+        host.off("message", receive);
+        resolve();
+      }
+    };
+    host.on("message", receive);
+  });
   guest.close();
-  await once(guest, "close");
+  await departure;
   const remaining = await request(
     host,
     { type: "WATCH_GET", roomId, senderId: "host" },
