@@ -69,34 +69,8 @@ export function MediaPlayerStage({
   }, [lastMessage]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  return (
-    <div className="cinema-layout">
-      <div className="shared-stage">
-      {reaction && <div key={reaction.id} className="stage-reaction" aria-hidden="true">{reaction.text}</div>}
-      {/* If Screen Sharing is active, render the dedicated live screen share stage */}
-      {isScreenSharing ? (
-        <RemoteScreenShare
-          stream={
-            screenShareOwner === "local"
-              ? screenStream
-              : remoteScreenStream || remoteStream
-          }
-          ownerName={screenShareOwner === "local" ? "You" : remoteUserName}
-          isLocal={screenShareOwner === "local"}
-          onStopSharing={onStopScreenShare}
-        />
-      ) : (
-        <WatchTogetherPlayer
-          signaling={signaling}
-          roomId={roomId}
-          userId={localUserId}
-        />
-      )}
-
-      </div>
-
-      <div className="cinema-companion">
-      <div className="participant-section space-y-2">
+  const roster = (
+    <div className="participant-section space-y-2">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
@@ -135,6 +109,37 @@ export function MediaPlayerStage({
           />
         </div>
       </div>
+  );
+
+  return (
+    <div className="cinema-layout">
+      <div className="shared-stage">
+      {reaction && <div key={reaction.id} className="stage-reaction" aria-hidden="true">{reaction.text}</div>}
+      {/* If Screen Sharing is active, render the dedicated live screen share stage */}
+      {isScreenSharing ? (
+        <RemoteScreenShare
+          stream={
+            screenShareOwner === "local"
+              ? screenStream
+              : remoteScreenStream || remoteStream
+          }
+          ownerName={screenShareOwner === "local" ? "You" : remoteUserName}
+          isLocal={screenShareOwner === "local"}
+          onStopSharing={onStopScreenShare}
+        />
+      ) : (
+        <WatchTogetherPlayer
+          signaling={signaling}
+          roomId={roomId}
+          userId={localUserId}
+          roster={roster}
+        />
+      )}
+
+      </div>
+
+      <div className="cinema-companion">
+        {isScreenSharing && roster}
         {companion}
       </div>
     </div>

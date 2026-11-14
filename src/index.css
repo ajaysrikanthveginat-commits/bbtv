@@ -1006,3 +1006,150 @@ button:disabled {
   .cinema-layout { grid-template-columns: minmax(0,1fr); }
   .cinema-companion .room-sidebar { height: 390px; }
 }
+
+/* The Listening Room */
+.listening-room {
+  --paper: #f4e7d6;
+  --ink: #2d201c;
+  --accent: #514a89;
+  color: var(--ink);
+  background: var(--paper);
+}
+.listening-room .night-room-header {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: #bca991;
+  padding: 16px clamp(18px, 4vw, 64px);
+}
+.listening-room .night-room-title h1 {
+  font: italic clamp(32px, 5vw, 74px)/.96 "Instrument Serif", Georgia, serif;
+  letter-spacing: -.02em;
+  max-width: min(65vw, 750px);
+  color: var(--ink);
+}
+.listening-room .night-room-title p { color: #705c50; }
+.listening-room .night-room-title .night-brand > span { background: #e0cdb7; color: var(--ink); }
+.listening-room .night-control {
+  background: #e9d8c4;
+  color: var(--ink);
+  border-color: #bcaa9366;
+}
+.listening-room .night-control:hover { background: #dcc6ad; }
+.listening-room .night-control.active, .listening-room .watch-lobby .night-control {
+  color: #fffaf3;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.listening-room .night-control.danger { background: #e5c1b1; color: #572e26; }
+.listening-room .night-dock { background: #f1e3d3f7; border-color: #bca991; }
+.listening-room .watch-player { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+.listening-room .watch-heading { padding: 8px 0 13px; }
+.listening-room .watch-heading h2 { color: var(--ink); font: 32px "Instrument Serif", Georgia, serif; margin: 0; }
+.listening-room .watch-heading .night-eyebrow { display:none; }
+.listening-room .watch-status { color: #513a32; background: #e8d6c2; border-color: #bca991; }
+.listening-room .watch-canvas { border-radius: 0; isolation: isolate; overflow: hidden; background: #1d1814; }
+.listening-room .watch-canvas:has(.listening-poster) { height: clamp(280px, 44vw, 550px); aspect-ratio: auto; }
+.listening-room .ambient-on .watch-canvas { box-shadow: 0 8px 42px #8a5c3748; }
+.listening-poster { position: absolute; inset:0; overflow:hidden; perspective: 850px; }
+.listening-poster img {
+  position: absolute; inset: 0; width:100%; height:100%; object-fit: cover;
+  transform: var(--poster-tilt, none) scale(1.035);
+  transition: transform .38s ease-out;
+}
+.poster-copy { position:absolute; top: 36%; right: 6%; width: 34%; color:#fff4e7; }
+.poster-copy h3 { font: italic clamp(28px,4.5vw,74px)/.86 "Instrument Serif", Georgia, serif; max-width: 8ch; text-shadow:0 2px 12px #21140e; }
+.poster-copy p { margin-top:12px; line-height:1.4; font-size:12px; text-shadow:0 1px 5px #21140e; }
+.listening-room .poster-copy .watch-preview { background: #f4e7d6; margin: 15px 0 0; padding: 8px 9px; font-size:11px; }
+.listening-room .watch-lobby { padding: 15px 0; gap: 14px; }
+.listening-room .watch-lobby h3, .listening-room .watch-lobby p, .listening-room .watch-hint, .listening-room .watch-options, .listening-room .watch-playback > span, .listening-room .queue-body p, .listening-room .watch-queue summary span { color: #623f32; }
+.listening-room .watch-source, .listening-room .queue-body input, .listening-room .queue-body li { background:#fff4e6; color:var(--ink); border-color:#bcaa93; }
+.listening-room .watch-source input { color:var(--ink); }
+.listening-room .watch-queue { border-color:#bcaa93; }
+.listening-room .watch-queue[open] summary { color:var(--accent); }
+.listening-room .watch-playback input, .listening-room .watch-options input { accent-color: var(--accent); }
+.listening-room .participant-section { margin-top: 14px; }
+.listening-room .participant-section > div:first-child > div > span, .listening-room .cinema-call-link { color: #503c34; }
+.listening-room .call-tile { background:#ead9c5; border-color:#bcaa93; }
+.listening-room .call-viewport { background:#e1cbb3; height:100px; }
+.listening-room .call-placeholder, .listening-room .call-caption small { color:#64493d; }
+.listening-room .call-placeholder svg { color:var(--accent); }
+.listening-room .call-invite { color:var(--accent); }
+.listening-room .cinema-companion .room-sidebar { color:#fff0e6; }
+.listening-room .watch-player:fullscreen { background:var(--paper); padding:16px; }
+.listening-room .watch-countdown { background:var(--accent); color:#fffaf3; border-color:#b6addb; }
+.listening-room .ambient-toggle[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); }
+.listening-room .cinema-companion:empty { display:none; }
+.listening-room .cinema-layout:not(:has(.cinema-companion > *)) { grid-template-columns: minmax(0,1fr); }
+@media(max-width: 720px) {
+  .listening-room .night-room-header { flex-wrap:wrap; gap:8px; padding:13px 15px; }
+  .listening-room .night-room-title { width:100%; }
+  .listening-room .night-room-title h1 { max-width:86vw; }
+  .listening-room .night-room-actions { margin-left:auto; }
+  .listening-room .watch-canvas:has(.listening-poster) { height:clamp(230px,84vw,380px); }
+  .listening-room .watch-lobby { flex-direction:column-reverse; align-items:stretch; text-align:center; }
+  .listening-room .watch-lobby h3 { display:none; }
+  .listening-room .watch-lobby .night-control { min-height:48px; }
+  .listening-room .poster-copy h3 { font-size:clamp(27px,8vw,42px); }
+  .listening-room .poster-copy .watch-preview { white-space: normal; min-height: 42px; }
+}
+
+@media (max-width: 720px) {
+  .listening-room .night-room-header { position: relative; display: flex; align-items: start; }
+  .listening-room .night-room-title h1 { font-size: clamp(36px, 11vw, 55px); }
+  .listening-room .night-room-title p { display: none; }
+  .listening-room .night-room-actions { margin: 3px 0 0; }
+  .listening-room .watch-heading { padding-block: 3px 10px; }
+  .listening-room .watch-heading h2 { font-size: 23px; }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-grid {
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-tile {
+    display: flex; align-items: center; gap: 10px; padding: 7px 2px;
+    background: transparent; border: 0; border-bottom: 1px solid #bca991; border-radius: 0;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-viewport {
+    flex: 0 0 39px; height: 39px; border-radius: 50%;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-placeholder {
+    padding: 0;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-placeholder > span,
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-invite { display: none; }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-caption {
+    flex: 1; font-size: 14px; padding: 0;
+  }
+  .listening-room .participant-section:has(.call-audio-unblock) .call-viewport:has(.call-audio-unblock) {
+    flex-basis: 105px; height: 53px; border-radius: 10px;
+  }
+  .listening-room .watch-lobby .night-control { font: italic 24px "Instrument Serif", Georgia, serif; }
+}
+
+/* Carry the screening room's printed-program look into the entrance. */
+.listening-home {
+  --house-ink: #f4e7d6;
+  --house-paper: #2d201c;
+  --house-muted: #705346;
+  --house-gold: #514a89;
+  --house-border: #bca991;
+  --font-display: "Instrument Serif", Georgia, serif;
+  color: var(--house-paper);
+  background: var(--house-ink);
+}
+.listening-home .night-brand > span:first-child,
+.listening-home .night-entry-icon { background: #e5d5c1; color: #514a89; }
+.listening-home .night-intro h1 { font-weight: 400; letter-spacing: -.045em; }
+.listening-home .night-intro h1 em { background: none; color: #514a89; font-style: italic; }
+.listening-home .night-entry { background: #f9efe2; box-shadow: none; }
+.listening-home .night-tabs, .listening-home .night-entry form > input { background: #ede0ce; color: #2d201c; }
+.listening-home .night-tabs button { color: #644d41; }
+.listening-home .night-tabs button[aria-pressed="true"] { background: #dfd0be; color: #2d201c; }
+.listening-home .night-control { background: #e9d8c4; color: #2d201c; border-color: #bcaa93; }
+.listening-home .night-primary { background: #514a89; color: #fffaf3; border-color: #514a89; }
+.listening-home .night-primary:hover:not(:disabled) { background: #413973; }
+.listening-home .night-connection i.online { background: #3b7555; box-shadow: none; }
+.listening-lobby-art { margin: 24px 0 0; }
+.listening-lobby-art img { display: block; width: 100%; height: clamp(210px, 27vw, 390px); object-fit: cover; object-position: center 59%; }
+@media(max-width: 800px) {
+  .listening-home .listening-lobby-art { grid-row: 3; margin-top: 24px; }
+  .listening-home .night-entry { margin-top: 22px; }
+}
