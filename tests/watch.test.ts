@@ -64,3 +64,18 @@ test("changing video resets readiness and playback; seek preserves countdown", (
   assert.equal(s.position, 0);
   assert.equal(s.playing, false);
 });
+
+test("guests can suggest videos and only the host can load them", () => {
+  const empty = newWatchState(false);
+  const queued = changeWatch(empty, {
+    kind: "queue-add", title: "Feature", url: "https://example.com/movie.mp4",
+  }, "guest", "host", ["host", "guest"], 100);
+  const load = { kind: "queue-load" as const, id: queued.queue[0].id };
+  assert.throws(() => changeWatch(queued, load, "guest", "host", ["host", "guest"], 200), /host/);
+  const loaded = changeWatch(queued, load, "host", "host", ["host", "guest"], 200);
+  assert.equal(loaded.title, "Feature");
+  assert.equal(loaded.url, "https://example.com/movie.mp4");
+  assert.deepEqual(loaded.queue, []);
+  assert.deepEqual(loaded.ready, []);
+  assert.equal(loaded.playing, false);
+});

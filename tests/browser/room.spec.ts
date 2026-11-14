@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('entry, invitation, two-person chat, cinema mode, and session recovery', async ({page,browser}, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('The picture house');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Hit play.');
   await page.getByLabel('Your name').fill('Alex');
   await page.getByLabel('Room name').fill('Friday favorites');
   await expect(page.getByRole('button',{name:'Start movie night'})).toBeEnabled();
@@ -25,6 +25,17 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await expect(guest.getByText('Popcorn is ready!',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Send ❤️ reaction'}).click();
   await expect(guest.locator('.stage-reaction')).toHaveText('❤️');
+  await guest.locator('.watch-queue summary').click();
+  await guest.getByLabel('Video title').fill('Next feature');
+  await guest.getByLabel('Video URL').fill('https://media.example.test/feature.mp4');
+  await guest.getByRole('button', {name: 'Add to queue'}).click();
+  await page.locator('.watch-queue summary').click();
+  await expect(page.getByText('Next feature', {exact: true})).toBeVisible();
+  await expect(guest.getByRole('button', {name: 'Remove Next feature'})).toHaveCount(0);
+  await page.getByRole('button', {name: 'Remove Next feature'}).click();
+  await expect(guest.getByText('Next feature', {exact: true})).toHaveCount(0);
+  await page.locator('.watch-queue summary').click();
+
   await page.screenshot({path:testInfo.outputPath('room.png'),fullPage:true});
   await page.locator('.cinema-toggle').click();
   await expect(page.locator('aside')).toBeHidden();
