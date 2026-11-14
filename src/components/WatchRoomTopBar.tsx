@@ -76,7 +76,7 @@ export function WatchRoomTopBar(p: WatchRoomTopBarProps) {
             <h1>{p.roomName || "Movie night"}</h1>
             <p role="status">
               {p.wsConnected
-                ? "Your little corner of the cinema"
+                ? "Room connected"
                 : "Reconnecting to your room…"}
             </p>
           </div>

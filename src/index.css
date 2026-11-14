@@ -821,3 +821,91 @@ button:disabled {
   .night-perks { margin-bottom: 12px; }
   .voice-join { min-width: 38px; }
 }
+
+/* Watch Studio */
+:root {
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-display: "Geist", system-ui, sans-serif;
+  --font-mono: "Space Mono", monospace;
+  --house-ink: #0d1118;
+  --house-border: #34424d;
+  --house-paper: #edf6f2;
+  --house-gold: #c5ff77;
+  --house-muted: #aab9c5;
+}
+.night-home, .room-shell {
+  background: radial-gradient(ellipse at 15% 0%, #193039 0%, transparent 55%), var(--house-ink);
+}
+.night-nav { height: 72px; }
+.night-hero { align-items: center; max-width: 1080px; margin-inline: auto; padding-block: 45px; }
+.night-intro h1 { position: relative; font-size: clamp(3.6rem,7vw,6.4rem); line-height: .96; letter-spacing: -.068em; margin: 8px 0 18px; }
+.night-intro h1 em { background: linear-gradient(110deg,#dcff9c,#94ffc8); background-clip: text; color: transparent; }
+.night-intro > p { font-size: 17px; }
+.night-perks { margin: 18px 0 0; gap: 10px 18px; font-size: 12px; }
+.studio-orbit { height: 174px; width: min(100%, 360px); position: relative; overflow: hidden; isolation: isolate; }
+.studio-ring { position: absolute; width: var(--ring); height: var(--ring); border: 1px solid #a2fff14a; border-radius: 50%; left: 30%; top: 48%; transform: translate(-50%,-50%) rotate(-27deg) scaleY(.46); box-shadow: 0 0 22px #6effbb21; }
+.ring-one { --ring: 97px; }
+.ring-two { --ring: 184px; }
+.ring-three { --ring: 270px; }
+.studio-signal { position: absolute; display: grid; place-items: center; background: #182931; color: #b7ff94; border: 1px solid #8cffad55; border-radius: 22px; width: 52px; height: 52px; box-shadow: 0 0 45px #7afec736; animation: studio-float 5s ease-in-out infinite; }
+.signal-play { top: 39px; left: calc(30% - 40px); width: 80px; height: 80px; color: #142510; background: #c5ff77; border-radius: 27px; transform: rotate(-8deg); }
+.signal-voice { left: 52%; top: 15px; animation-delay: -2s; }
+.signal-chat { left: 63%; top: 90px; animation-delay: -3.5s; }
+@keyframes studio-float { 50% { translate: 0 -10px; } }
+.night-entry, .watch-player, .room-sidebar, .media-dialog, .call-tile { background: #151d28; border: 1px solid var(--house-border); }
+.night-entry { border-radius: 24px; padding: clamp(20px,3vw,36px); box-shadow: 0 30px 70px #060b1055; }
+.night-entry-icon { background: #223745; }
+.night-tabs, .watch-source, .invite-link { background: #101821; }
+.night-entry form > input { background: #101821; }
+.night-tabs button[aria-pressed="true"], .night-control, .media-option { background: #22323e; color: var(--house-paper); }
+.night-control:hover, .media-option:hover { background: #324652; }
+.night-primary, .night-control.active { background: var(--house-gold); color: #12230c; border-color: var(--house-gold); }
+.night-primary:hover:not(:disabled), .night-control.active:hover { background: #dbffaa; }
+.night-control.danger { background: #482b38; color: #ffbdcc; }
+.night-primary, .night-control, .night-tabs button { transition: background .18s ease, translate .18s ease; }
+.night-primary:not(:disabled):active, .night-control:not(:disabled):active { translate: 0 2px; }
+.night-room-header, .night-dock { background: #111a24f5; }
+.night-room-header { padding-block: 11px; }
+.watch-heading { padding-block: 14px; }
+.watch-canvas { background: #090e15; }
+.watch-canvas:has(.watch-empty) { background: radial-gradient(ellipse at 50% 15%, #234653, #0b141f 70%); }
+.watch-empty { animation: studio-enter .5s ease both; }
+.watch-countdown { background: #c5ff77; color: #15280e; border-color: #ebffcb; animation: studio-enter .32s ease both; }
+.call-viewport { background: radial-gradient(ellipse at 50% 120%,#2b4f52,#15212c); }
+.invite-ticket { background: linear-gradient(130deg,#223e47,#182731); border-color: #c5ff7744; }
+.watch-source { margin-top: 14px; }
+.watch-hint { padding-block: 9px; }
+.watch-queue { border-top: 1px solid var(--house-border); }
+.watch-queue summary { display: flex; list-style: none; cursor: pointer; align-items: center; gap: 10px; padding: 15px 20px; font-weight: 700; }
+.watch-queue summary span { margin-left: auto; color: var(--house-muted); font: 11px var(--font-mono); }
+.watch-queue[open] summary { color: var(--house-gold); }
+.queue-body { padding: 0 20px 18px; animation: studio-enter .22s ease both; }
+.queue-body p { font-size: 13px; color: var(--house-muted); margin-bottom: 14px; }
+.queue-body ol { display: grid; gap: 6px; margin-bottom: 12px; }
+.queue-body li { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #101821; border-radius: 9px; padding: 8px 10px; }
+.queue-body li b { overflow-wrap: anywhere; min-width: 0; }
+.queue-body li > div { display: flex; gap: 5px; }
+.queue-body form { display: grid; grid-template-columns: 1fr 1.35fr auto; gap: 8px; align-items: end; }
+.queue-body label { font-size: 12px; display: grid; gap: 5px; min-width: 0; }
+.queue-body input { background: #101821; border: 1px solid var(--house-border); padding: 10px; border-radius: 8px; min-width: 0; }
+.cinema-mode .watch-queue { display: none; }
+@keyframes studio-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media(min-width: 1024px) {
+  .room-shell { padding-bottom: 24px; }
+  .night-dock { position: sticky; top: 0; bottom: auto; left: auto; transform: none; margin: 0 auto; justify-content: center; max-width: 100%; width: 100%; border-radius: 0; border-width: 0 0 1px; padding: 8px; }
+  .night-dock .night-control { padding-block: 7px; }
+  .room-sidebar { top: 65px; }
+}
+@media(max-width:720px) {
+  .night-hero { padding-block: 24px; }
+  .night-intro h1 { font-size: clamp(3.3rem,11vw,4.6rem); }
+  .studio-orbit { height: 98px; width: 240px; }
+  .studio-ring { left: 34%; }
+  .signal-play { width: 54px; height: 54px; top: 23px; left: calc(34% - 27px); border-radius: 17px; }
+  .signal-play svg { width:25px; }
+  .signal-voice, .signal-chat { width: 36px; height: 36px; border-radius: 12px; }
+  .signal-voice svg, .signal-chat svg { width: 19px; }
+  .signal-chat { top: 56px; left: 65%; }
+  .night-perks { font-size: 11px; gap: 7px 12px; }
+  .queue-body form { grid-template-columns: 1fr; }
+}

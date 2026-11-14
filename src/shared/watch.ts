@@ -1,4 +1,12 @@
+export interface QueueEntry {
+  id: string;
+  title: string;
+  url: string;
+}
+
 export interface WatchState {
+  queue: QueueEntry[];
+  title?: string;
   url: string;
   position: number;
   playing: boolean;
@@ -9,6 +17,8 @@ export interface WatchState {
 }
 export type WatchAction =
   | { kind: "source"; url: string }
+  | { kind: "queue-add"; title: string; url: string }
+  | { kind: "queue-remove" | "queue-load"; id: string }
   | { kind: "preview" }
   | { kind: "ready"; ready: boolean }
   | { kind: "start" }
@@ -17,6 +27,7 @@ export type WatchAction =
   | { kind: "permission"; allowControl: boolean };
 export const newWatchState = (allowControl = true): WatchState => ({
   url: "",
+  queue: [],
   position: 0,
   playing: false,
   updatedAt: 0,
@@ -53,6 +64,23 @@ export function changeWatch(
     }
     return next;
   }
+  if (action.kind === "queue-add") {
+    const title = typeof action.title === "string" ? action.title.trim() : "";
+    if (!title || title.length > 70) throw new Error("Add a video title up to 70 characters.");
+    if (state.queue.length >= 8) throw new Error("The queue has room for eight videos.");
+    const url = validateVideoUrl(action.url);
+    if (state.queue.some((entry) => entry.url === url)) throw new Error("That video is already queued.");
+    return { ...next, queue: [...state.queue, { id: String(next.revision), title, url }] };
+  }
+  if (action.kind === "queue-remove" || action.kind === "queue-load") {
+    if (actor !== host) throw new Error("Only the host can manage the queue.");
+    const entry = state.queue.find((item) => item.id === action.id);
+    if (!entry) throw new Error("That video is no longer queued.");
+    const queue = state.queue.filter((item) => item.id !== entry.id);
+    return action.kind === "queue-remove" ? { ...next, queue } : {
+      ...next, queue, url: entry.url, title: entry.title, position: 0, playing: false, ready: [], updatedAt: now,
+    };
+  }
   if (
     actor !== host &&
     (!state.allowControl ||
@@ -62,21 +90,13 @@ export function changeWatch(
     throw new Error("Only the host can do that.");
   switch (action.kind) {
     case "preview":
-      return { ...next, url: "/bbtv-preview.webm", playing: false, position: 0, updatedAt: now, ready: [] };
+      return { ...next, url: "/bbtv-preview.webm", title: "BBTV Preview", playing: false, position: 0, updatedAt: now, ready: [] };
     case "source": {
-      if (typeof action.url !== "string" || action.url.length > 4096)
-        throw new Error("Enter a valid HTTPS video URL.");
-      let url: URL;
-      try {
-        url = new URL(action.url);
-      } catch {
-        throw new Error("Enter a valid HTTPS video URL.");
-      }
-      if (url.protocol !== "https:" || url.username || url.password)
-        throw new Error("Use an HTTPS video URL without credentials.");
+      const url = validateVideoUrl(action.url);
       return {
         ...next,
-        url: url.href,
+        url,
+        title: undefined,
         playing: false,
         position: 0,
         updatedAt: now,
@@ -120,4 +140,19 @@ export function changeWatch(
     default:
       throw new Error("Unknown watch action.");
   }
+}
+
+
+function validateVideoUrl(value: string): string {
+  if (typeof value !== "string" || value.length > 4096) throw new Error("Enter a valid HTTPS video URL.");
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Enter a valid HTTPS video URL.");
+  }
+  if (url.protocol !== "https:" || url.username || url.password)
+    throw new Error("Use an HTTPS video URL without credentials.");
+  if (url.href.length > 4096) throw new Error("The video URL is too long.");
+  return url.href;
 }

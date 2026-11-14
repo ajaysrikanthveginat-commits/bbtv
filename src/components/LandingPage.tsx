@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import {
   ArrowRight,
   Film,
+  Play,
+  AudioLines,
   Monitor,
   Users,
   MessageCircle,
@@ -64,7 +66,7 @@ export function LandingPage({
           <span>
             <Film size={22} />
           </span>
-          BBTV<span className="night-brand-note">better together</span>
+          BBTV<span className="night-brand-note">Watch Studio</span>
         </a>
         <div className="night-connection" role="status">
           <i className={wsConnected ? "online" : ""} />
@@ -74,44 +76,22 @@ export function LandingPage({
       <main className="night-main">
         <section className="night-hero">
           <div className="night-intro">
-            <h1>
-              {initialRoomCode ? (
-                <>
-                  Your seat is
-                  <br />
-                  <em>waiting.</em>
-                </>
-              ) : (
-                <>
-                  The picture house
-                  <br />
-                  <em>for two.</em>
-                </>
-              )}
-            </h1>
-            <p>
-              {initialRoomCode
-                ? "Someone saved you a spot. Add your name and join the room."
-                : "Start a private cinema, invite your favorite person, and press play together."}
-            </p>
-            <div className="night-perks">
-              <span>
-                <Users size={16} /> Made for two
-              </span>
-              <span>
-                <Monitor size={16} /> Screen sharing
-              </span>
-              <span>
-                <MessageCircle size={16} /> Chat & calls
-              </span>
+            <div className="studio-orbit" aria-hidden="true">
+              <div className="studio-ring ring-one" />
+              <div className="studio-ring ring-two" />
+              <div className="studio-ring ring-three" />
+              <div className="studio-signal signal-play"><Play size={38} fill="currentColor" /></div>
+              <div className="studio-signal signal-voice"><AudioLines size={25} /></div>
+              <div className="studio-signal signal-chat"><MessageCircle size={25} /></div>
             </div>
-            <div className="picture-marquee" aria-hidden="true">
-              <div className="marquee-frame">
-                <div className="marquee-rays" />
-                <div className="marquee-moon" />
-                <div className="marquee-seat first" />
-                <div className="marquee-seat second" />
-              </div>
+            <h1>{initialRoomCode ? <>You’re <em>invited.</em></> : <>Hit play.<br /><em>Stay close.</em></>}</h1>
+            <p>{initialRoomCode
+              ? "Enter your name to join your friend’s watch room."
+              : "A shared screen for friends, wherever you are."}</p>
+            <div className="night-perks">
+              <span><Users size={16} /> Two-person rooms</span>
+              <span><Monitor size={16} /> Shared playback</span>
+              <span><MessageCircle size={16} /> Voice, video & chat</span>
             </div>
           </div>
           <section className="night-entry" aria-labelledby="entry-heading">
@@ -119,12 +99,12 @@ export function LandingPage({
               <Film size={23} />
             </div>
             <h2 id="entry-heading">
-              {mode === "create" ? "Make tonight a movie night" : "Come on in"}
+              {mode === "create" ? "Open a watch room" : "Join your friend"}
             </h2>
             <p>
               {mode === "create"
-                ? "A room for you and your favorite person."
-                : "One code. One room. Together again."}
+                ? "Send your friend the invite after you enter."
+                : "Use the room code from your invitation."}
             </p>
             <div className="night-tabs" aria-label="Room action">
               {(["create", "join"] as const).map((tab) => (
@@ -227,7 +207,7 @@ export function LandingPage({
         </section>
       </main>
       <footer className="night-footer">
-        <span>BBTV Picture House</span>
+        <span>BBTV Watch Studio</span>
         {onToggleDiagnostics && (
           <button onClick={onToggleDiagnostics}>
             <Activity size={14} /> Connection help

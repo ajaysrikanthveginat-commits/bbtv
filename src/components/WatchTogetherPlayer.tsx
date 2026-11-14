@@ -7,6 +7,9 @@ import {
   RefreshCw,
   Link,
   Check,
+  ListVideo,
+  Plus,
+  X,
 } from "lucide-react";
 import { SignalingService } from "../services/SignalingService";
 import { WatchAction, WatchState, watchPosition } from "../shared/watch";
@@ -27,6 +30,10 @@ export function WatchTogetherPlayer({
   const [host, setHost] = useState("");
   const [members, setMembers] = useState<string[]>([]);
   const [url, setUrl] = useState("");
+  const [queuedTitle, setQueuedTitle] = useState("");
+  const [queuedUrl, setQueuedUrl] = useState("");
+  const queue = state?.queue ?? [];
+  const pendingQueue = useRef("");
   const [error, setError] = useState("");
   const [connected, setConnected] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -75,6 +82,11 @@ export function WatchTogetherPlayer({
             ? message.state!
             : previous,
         );
+        if (pendingQueue.current && message.state.queue?.some((entry) => entry.url === pendingQueue.current)) {
+          pendingQueue.current = "";
+          setQueuedTitle("");
+          setQueuedUrl("");
+        }
         setHost(message.hostId || "");
         setMembers(message.members || []);
       }
@@ -135,7 +147,7 @@ export function WatchTogetherPlayer({
       <div className="watch-heading">
         <div>
           <span className="night-eyebrow">YOUR SHARED SCREEN</span>
-          <h2>Settle in. You’re together.</h2>
+          <h2>{state?.title || "Now watching"}</h2>
         </div>
         <span className="watch-status" role="status">
           {!connected
@@ -149,36 +161,6 @@ export function WatchTogetherPlayer({
                   : "Paused"}
         </span>
       </div>
-      {isHost && (
-        <form
-          className="watch-source"
-          onSubmit={(event) => {
-            event.preventDefault();
-            send({ kind: "source", url });
-          }}
-        >
-          <label className="sr-only" htmlFor="video-source">
-            Direct HTTPS video link
-          </label>
-          <Link size={18} />
-          <input
-            id="video-source"
-            type="url"
-            required
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            placeholder="Paste a direct HTTPS video link (.mp4, .webm…)"
-          />
-          <button className="night-control active" disabled={!connected}>
-            Load video
-          </button>
-        </form>
-      )}
-      <p className="watch-hint">
-        Use a direct, browser-playable video link accessible to both people.
-        YouTube and subscription-service page links aren’t supported here. Use
-        screen sharing for other supported content.
-      </p>
       <div className="watch-canvas">
         {state?.url ? (
           <video
@@ -218,7 +200,7 @@ export function WatchTogetherPlayer({
             <h3>A seat for you. A seat for them.</h3>
             <p>
               {isHost
-                ? "Add a video link above, or share your screen from the toolbar."
+                ? "Load a video below, or share your screen from the toolbar."
                 : "Your host is choosing something to watch. Get comfortable."}
             </p>
             {isHost && <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
@@ -227,7 +209,7 @@ export function WatchTogetherPlayer({
           </div>
         )}
         {!!countdown && (
-          <div className="watch-countdown" aria-live="polite">
+          <div key={countdown} className="watch-countdown" aria-live="polite">
             {countdown}
           </div>
         )}
@@ -295,6 +277,36 @@ export function WatchTogetherPlayer({
           <Maximize size={17} />
         </button>
       </div>
+      {isHost && (
+        <form
+          className="watch-source"
+          onSubmit={(event) => {
+            event.preventDefault();
+            send({ kind: "source", url });
+          }}
+        >
+          <label className="sr-only" htmlFor="video-source">
+            Direct HTTPS video link
+          </label>
+          <Link size={18} />
+          <input
+            id="video-source"
+            type="url"
+            required
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder="Paste a direct HTTPS video link (.mp4, .webm…)"
+          />
+          <button className="night-control active" disabled={!connected}>
+            Load video
+          </button>
+        </form>
+      )}
+      <p className="watch-hint">
+        Use a direct, browser-playable video link accessible to both people.
+        YouTube and subscription-service page links aren’t supported here. Use
+        screen sharing for other supported content.
+      </p>
       <div className="watch-lobby">
         <div>
           <h3>Ready when you both are</h3>
@@ -352,6 +364,35 @@ export function WatchTogetherPlayer({
           {error}
         </p>
       )}
+      <details className="watch-queue">
+        <summary><ListVideo size={19} /> Up next <span>{queue.length} / 8</span></summary>
+        <div className="queue-body">
+          {queue.length === 0 && <p>Either person can suggest a video. The host picks what plays next.</p>}
+          {queue.length > 0 && <ol>{queue.map((entry) => (
+            <li key={entry.id}>
+              <b>{entry.title}</b>
+              {isHost && <div>
+                <button type="button" className="night-control" disabled={!connected} onClick={() => send({ kind: "queue-load", id: entry.id })}>Load</button>
+                <button type="button" className="night-control" disabled={!connected} aria-label={`Remove ${entry.title}`} onClick={() => send({ kind: "queue-remove", id: entry.id })}><X size={16}/></button>
+              </div>}
+            </li>
+          ))}</ol>}
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            try {
+              pendingQueue.current = new URL(queuedUrl).href;
+            } catch {
+              setError("Enter a valid HTTPS video URL.");
+              return;
+            }
+            send({ kind: "queue-add", title: queuedTitle, url: queuedUrl });
+          }}>
+            <label>Video title<input required maxLength={70} value={queuedTitle} onChange={(event) => setQueuedTitle(event.target.value)} placeholder="Something worth watching" /></label>
+            <label>Video URL<input required type="url" maxLength={4096} value={queuedUrl} onChange={(event) => setQueuedUrl(event.target.value)} placeholder="https://…/video.mp4" /></label>
+            <button className="night-control active" disabled={!connected || queue.length >= 8}><Plus size={16}/> Add to queue</button>
+          </form>
+        </div>
+      </details>
     </section>
   );
 }
