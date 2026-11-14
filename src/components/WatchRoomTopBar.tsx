@@ -40,6 +40,7 @@ interface WatchRoomTopBarProps {
   onStopScreenShare?: () => void;
   onToggleDiagnostics: () => void;
   onEnableMedia: () => void;
+  onEnableVoice: () => void;
   onToggleVideo: () => void;
   onToggleAudio: () => void;
   onLeaveRoom: () => void;
@@ -115,10 +116,13 @@ export function WatchRoomTopBar(p: WatchRoomTopBarProps) {
       </header>
       <nav className="night-dock" aria-label="Room controls">
         {!p.localStreamActive ? (
+          <>
           <button className="night-control" onClick={p.onEnableMedia}>
             <Video size={19} />
             Enable call
           </button>
+          <button className="night-control voice-join" onClick={p.onEnableVoice}><Mic size={17} /> Voice only</button>
+          </>
         ) : (
           <>
             <button

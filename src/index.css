@@ -753,3 +753,71 @@ button:disabled {
 
 .watch-preview{margin:16px auto 0}
 @media(max-width:720px){.watch-empty{padding:12px}.watch-preview{margin-top:9px}.watch-empty>span{width:38px;height:38px}}
+
+/* Picture House: oxblood surfaces and a warm projection light. */
+:root {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
+  --house-ink: #170f12;
+  --house-border: #e8af992a;
+  --house-paper: #fff0da;
+  --house-gold: #ffd398;
+  --house-muted: #d3b7ad;
+}
+.night-home, .room-shell {
+  color: var(--house-paper);
+  background: radial-gradient(ellipse at 12% 0%, #4b202b 0%, transparent 53%), var(--house-ink);
+}
+.night-nav, .night-footer { border-color: var(--house-border); }
+.night-brand, .night-intro h1, .night-entry h2, .night-room-title h1, .watch-heading h2, .media-dialog h2 {
+  font-family: var(--font-display);
+  color: var(--house-paper);
+}
+.night-brand > span:first-child { background: var(--house-gold); color: #2e161e; }
+.night-intro h1 { font-size: clamp(3.4rem, 7vw, 6.2rem); line-height: .88; letter-spacing: -.076em; margin-top: 0; }
+.night-intro h1 em { color: var(--house-gold); }
+.night-hero { gap: clamp(28px, 6vw, 90px); align-items: start; }
+.night-intro > p, .night-perks, .night-brand .night-brand-note, .night-entry > p, .night-form-hint,
+.night-room-title p, .watch-hint, .watch-empty p, .watch-lobby p, .watch-options, .night-connection, .night-footer {
+  color: var(--house-muted);
+}
+.night-eyebrow, .night-perks svg, .media-option svg { color: var(--house-gold); }
+.picture-marquee {
+  padding: 12px 16px;
+  border: 1px solid var(--house-border);
+  border-radius: 13px;
+  background:
+    repeating-linear-gradient(90deg,#cf9568 0 7px,transparent 7px 18px) 16px 4px / calc(100% - 32px) 3px no-repeat,
+    repeating-linear-gradient(90deg,#cf9568 0 7px,transparent 7px 18px) 16px calc(100% - 4px) / calc(100% - 32px) 3px no-repeat,
+    #28151b;
+}
+.marquee-frame { position: relative; isolation: isolate; overflow: hidden; height: clamp(116px,20vw,240px); border-radius: 5px; background: #361820; }
+.marquee-rays { position: absolute; inset: 0; background: conic-gradient(from 199deg at 50% 31%, #fbac7620, #fbac7603 8%, #fbac7628 13%, #fbac7605 20%, #fbac762a 28%, #fbac7606 38%, #fbac762a 50%, #fbac7604 60%, #fbac7628 70%, #fbac7604 82%, #fbac7620 100%); }
+.marquee-moon { position: absolute; top: 14%; left: 50%; transform: translateX(-50%); width: 21%; aspect-ratio: 1; border-radius: 100%; background: linear-gradient(155deg,#ffe5ae,#ff9e77); box-shadow: 0 0 66px #ffac7150; }
+.marquee-seat { position: absolute; left: 31%; bottom: -23%; width: 19%; height: 67%; border-radius: 36% 36% 11% 11%; border: 5px solid #fa996d50; background: repeating-linear-gradient(90deg,#922f42 0 18%,#ae3b4a 18% 21%,#922f42 21% 24%); transform: rotate(-8deg); box-shadow: 0 0 0 7px #221017; }
+.marquee-seat.second { left: 51%; transform: rotate(8deg); }
+.night-entry, .watch-player, .room-sidebar, .media-dialog, .call-tile { background: #27171e; border-color: var(--house-border); }
+.night-entry { border-radius: 18px; border-top: 3px solid var(--house-gold); }
+.night-entry h2 { font-size: 29px; letter-spacing: -.045em; }
+.night-entry-icon, .watch-empty > span, .watch-status { background: #ffd39818; color: var(--house-gold); border-color: #ffd39832; }
+.night-tabs { background: #1c1117; }
+.night-tabs button[aria-pressed="true"], .night-control, .media-option { background: #442633; color: var(--house-paper); }
+.night-control:hover, .media-option:hover { background: #583140; }
+.night-primary, .night-control.active { background: var(--house-gold); color: #331923; border-color: #ffd398; box-shadow: none; }
+.night-primary:hover:not(:disabled), .night-control.active:hover { background: #ffe8c6; }
+.night-room-header, .night-dock { background: #281720f5; border-color: var(--house-border); }
+.watch-canvas, .watch-source, .invite-link { background: #1b1017; }
+.watch-canvas:has(.watch-empty) { background: radial-gradient(ellipse at 50% 25%,#482230,#1b1017 69%); }
+.call-viewport { background: radial-gradient(ellipse at 50% 120%,#663444,#25151c); }
+.call-placeholder, .call-caption small { color: var(--house-muted); }
+.call-placeholder svg { color: var(--house-gold); }
+.shared-stage { position: relative; min-width: 0; }
+.stage-reaction { position: absolute; z-index: 21; pointer-events: none; right: 8%; top: 35%; font-size: clamp(2rem,7vw,4rem); animation: reaction-rise 2.4s ease-out both; filter: drop-shadow(0 8px 18px #0007); }
+@keyframes reaction-rise { 0% { transform: translateY(44px) scale(.7); opacity: 0; } 14% { opacity: 1; } 72% { opacity: 1; } 100% { transform: translateY(-64px); opacity: 0; } }
+@media(prefers-reduced-motion: reduce) { .stage-reaction { animation: none; } }
+@media(max-width:720px) {
+  .night-intro h1 { font-size: clamp(2.9rem, 10vw, 4.5rem); }
+  .night-hero { gap: 22px; }
+  .night-perks { margin-bottom: 12px; }
+  .voice-join { min-width: 38px; }
+}

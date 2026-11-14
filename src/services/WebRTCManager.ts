@@ -215,19 +215,12 @@ export class WebRTCManager {
         );
       }
 
-      // Determine if incoming video track belongs to screen share or camera
-      const isScreenTrack =
-        track.kind === 'video' &&
-        ((this.remoteScreenTrackId && track.id === this.remoteScreenTrackId) ||
-          (this.remoteScreenStreamId && streams && streams[0]?.id === this.remoteScreenStreamId) ||
-          (this.isRemoteScreenSharing &&
-            this.remoteStream.getVideoTracks().length > 0 &&
-            !this.remoteStream.getVideoTracks().some((t) => t.id === track.id)) ||
-          (streams &&
-            streams[0] &&
-            this.remoteStream.id !== '' &&
-            streams[0].id !== this.remoteStream.id &&
-            this.remoteStream.getVideoTracks().length > 0));
+      // Screen sharing is signaled before its offer. A camera can be streamless
+      // or move to a new stream after renegotiation, so stream changes alone
+      // must never cause a camera to be rendered as a screen share.
+      const isScreenTrack = track.kind === 'video' && this.isRemoteScreenSharing &&
+        (track.id === this.remoteScreenTrackId ||
+          streams.some((stream) => stream.id === this.remoteScreenStreamId));
 
       // Track frame delivery / unmute listeners
       track.onunmute = () => {
@@ -601,7 +594,7 @@ export class WebRTCManager {
     }
     const pc = this.pc!;
 
-    if (pc.signalingState !== 'stable') {
+    if (this.isMakingOffer || pc.signalingState !== 'stable') {
       this.callbacks.onLog(`[OFFER CREATE] Skipping: signalingState is ${pc.signalingState} (not stable)`, 'warn');
       return null;
     }
@@ -631,6 +624,7 @@ export class WebRTCManager {
         offerToReceiveVideo: true,
       });
 
+      if (pc !== this.pc || pc.signalingState !== 'stable') return null;
       await pc.setLocalDescription(offer);
       this.inspectSDP('LOCAL', pc.localDescription?.sdp);
       this.logTransceivers();

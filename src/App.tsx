@@ -540,11 +540,11 @@ export default function App() {
   }, []);
 
   // Request user camera and microphone
-  const handleEnableMedia = async () => {
+  const handleEnableMedia = async (audioOnly = false) => {
     try {
       addLog('Requesting camera and microphone access (getUserMedia)...', 'info');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
+        video: audioOnly ? false : {
           width: { ideal: 640 },
           height: { ideal: 360 },
           frameRate: { ideal: 24 },
@@ -593,6 +593,8 @@ export default function App() {
       }
 
       setLocalStream(stream);
+      setVideoEnabled(vTracks.length > 0);
+      setAudioEnabled(aTracks.length > 0);
       await webrtcRef.current?.setLocalStream(stream);
 
       setDiagnostics((prev) => ({
@@ -640,7 +642,24 @@ export default function App() {
   };
 
   // Toggle local camera
-  const handleToggleVideo = () => {
+  const handleToggleVideo = async () => {
+    if (localStream && localStream.getVideoTracks().length === 0) {
+      const manager = webrtcRef.current;
+      try {
+        const camera = await navigator.mediaDevices.getUserMedia({ video: true });
+        const track = camera.getVideoTracks()[0];
+        if (!inRoomRef.current || !manager || webrtcRef.current !== manager) { track?.stop(); return; }
+        if (track) {
+          const combined = new MediaStream([...localStream.getAudioTracks(), track]);
+          setLocalStream(combined);
+          setVideoEnabled(true);
+          await manager.setLocalStream(combined);
+          const offer = await manager.createOffer();
+          if (offer && remoteUserIdRef.current) signalingRef.current?.send({ type: "OFFER", roomId: roomIdRef.current, senderId: localUserId, targetId: remoteUserIdRef.current, payload: offer });
+        }
+      } catch { setErrorMessage("Camera unavailable. Check your browser permissions and try again."); }
+      return;
+    }
     const nextState = !videoEnabled;
     const ok = webrtcRef.current?.setVideoEnabled(nextState);
     if (ok) {
@@ -985,7 +1004,8 @@ export default function App() {
             onStartScreenShare={handleStartScreenShare}
             onStopScreenShare={handleStopScreenShare}
             onToggleDiagnostics={() => setIsDiagnosticsModalOpen(!isDiagnosticsModalOpen)}
-            onEnableMedia={handleEnableMedia}
+            onEnableMedia={() => handleEnableMedia()}
+            onEnableVoice={() => handleEnableMedia(true)}
             onToggleVideo={handleToggleVideo}
             onToggleAudio={handleToggleAudio}
             onLeaveRoom={handleLeaveRoom}
@@ -1028,7 +1048,8 @@ export default function App() {
               onStopScreenShare={handleStopScreenShare}
               onOpenMediaModal={() => setIsMediaModalOpen(true)}
               onOpenInviteModal={() => setIsInviteModalOpen(true)}
-              onEnableMedia={handleEnableMedia}
+              onEnableMedia={() => handleEnableMedia()}
+              messages={messages}
             />
 
             {/* Right 25%: Collaboration Sidebar (Chat & People) */}
