@@ -1092,3 +1092,34 @@ button:disabled {
   .listening-room .poster-copy h3 { font-size:clamp(27px,8vw,42px); }
   .listening-room .poster-copy .watch-preview { white-space: normal; min-height: 42px; }
 }
+
+@media (max-width: 720px) {
+  .listening-room .night-room-header { position: relative; display: flex; align-items: start; }
+  .listening-room .night-room-title h1 { font-size: clamp(36px, 11vw, 55px); }
+  .listening-room .night-room-title p { display: none; }
+  .listening-room .night-room-actions { margin: 3px 0 0; }
+  .listening-room .watch-heading { padding-block: 3px 10px; }
+  .listening-room .watch-heading h2 { font-size: 23px; }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-grid {
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-tile {
+    display: flex; align-items: center; gap: 10px; padding: 7px 2px;
+    background: transparent; border: 0; border-bottom: 1px solid #bca991; border-radius: 0;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-viewport {
+    flex: 0 0 39px; height: 39px; border-radius: 50%;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-placeholder {
+    padding: 0;
+  }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-placeholder > span,
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-invite { display: none; }
+  .listening-room .participant-section:not(:has(.call-tile video:not(.call-video-hidden))) .call-caption {
+    flex: 1; font-size: 14px; padding: 0;
+  }
+  .listening-room .participant-section:has(.call-audio-unblock) .call-viewport:has(.call-audio-unblock) {
+    flex-basis: 105px; height: 53px; border-radius: 10px;
+  }
+  .listening-room .watch-lobby .night-control { font: italic 24px "Instrument Serif", Georgia, serif; }
+}
