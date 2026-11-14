@@ -655,6 +655,11 @@ export class WebRTCManager {
       this.initPeerConnection();
     }
     const pc = this.pc!;
+    const collision = this.isMakingOffer || pc.signalingState !== 'stable';
+    if (collision && this.role === 'host') {
+      this.callbacks.onLog('Ignoring a colliding offer. The participant can answer the host offer.', 'info');
+      return null;
+    }
     this.isOfferer = false;
 
     try {

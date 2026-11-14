@@ -1,6 +1,8 @@
+import type { WatchState, WatchAction } from '../shared/watch';
 export type UserRole = 'host' | 'participant';
 
 export type SignalingMessageType =
+  | 'WATCH_GET' | 'WATCH_ACTION' | 'WATCH_STATE' | 'WATCH_ERROR'
   | 'CREATE_ROOM'
   | 'JOIN_ROOM'
   | 'RECONNECT_ROOM'
@@ -25,6 +27,8 @@ export interface BaseSignalingMessage {
 
 export interface CreateRoomMessage extends BaseSignalingMessage {
   type: 'CREATE_ROOM';
+  allowControl?: boolean;
+  roomName?: string;
 }
 
 export interface JoinRoomMessage extends BaseSignalingMessage {
@@ -43,6 +47,7 @@ export interface LeaveRoomMessage extends BaseSignalingMessage {
 
 export interface RoomJoinedMessage extends BaseSignalingMessage {
   type: 'ROOM_JOINED';
+  resumeToken?: string;
   role: UserRole;
   remoteUserId?: string | null;
 }
@@ -104,6 +109,7 @@ export interface ScreenShareStoppedMessage extends BaseSignalingMessage {
 }
 
 export type SignalingMessage =
+  | WatchMessage
   | CreateRoomMessage
   | JoinRoomMessage
   | ReconnectRoomMessage
@@ -118,3 +124,15 @@ export type SignalingMessage =
   | ChatMessageSignaling
   | ScreenShareStartedMessage
   | ScreenShareStoppedMessage;
+
+export interface WatchMessage extends BaseSignalingMessage {
+  type: 'WATCH_GET' | 'WATCH_ACTION' | 'WATCH_STATE' | 'WATCH_ERROR';
+  action?: WatchAction;
+  state?: WatchState;
+  hostId?: string;
+  roomName?: string;
+  members?: string[];
+  serverTime?: number;
+  requestTime?: number;
+  message?: string;
+}
