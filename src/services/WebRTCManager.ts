@@ -75,7 +75,7 @@ export class WebRTCManager {
     );
   }
 
-  public initPeerConnection(remotePeerId?: string): RTCPeerConnection {
+  public initPeerConnection(remotePeerId?: string, answering = false): RTCPeerConnection {
     if (remotePeerId) {
       this.remoteUserId = remotePeerId;
     }
@@ -100,8 +100,10 @@ export class WebRTCManager {
     // SECTION 7 & 8: Pre-configure bidirectional audio and video transceivers
     // Both peers need to send and receive media.
     try {
-      pc.addTransceiver('audio', { direction: 'sendrecv' });
-      pc.addTransceiver('video', { direction: 'sendrecv' });
+      if (!answering) {
+        pc.addTransceiver('audio', { direction: 'sendrecv' });
+        pc.addTransceiver('video', { direction: 'sendrecv' });
+      }
       this.callbacks.onLog(`Configured default transceivers (audio & video: sendrecv)`, 'info');
     } catch (err: any) {
       console.warn(`[TRANSCEIVER INIT WARNING]`, err);
@@ -215,19 +217,12 @@ export class WebRTCManager {
         );
       }
 
-      // Determine if incoming video track belongs to screen share or camera
-      const isScreenTrack =
-        track.kind === 'video' &&
-        ((this.remoteScreenTrackId && track.id === this.remoteScreenTrackId) ||
-          (this.remoteScreenStreamId && streams && streams[0]?.id === this.remoteScreenStreamId) ||
-          (this.isRemoteScreenSharing &&
-            this.remoteStream.getVideoTracks().length > 0 &&
-            !this.remoteStream.getVideoTracks().some((t) => t.id === track.id)) ||
-          (streams &&
-            streams[0] &&
-            this.remoteStream.id !== '' &&
-            streams[0].id !== this.remoteStream.id &&
-            this.remoteStream.getVideoTracks().length > 0));
+      // Screen sharing is signaled before its offer. A camera can be streamless
+      // or move to a new stream after renegotiation, so stream changes alone
+      // must never cause a camera to be rendered as a screen share.
+      const isScreenTrack = track.kind === 'video' && this.isRemoteScreenSharing &&
+        (track.id === this.remoteScreenTrackId ||
+          streams.some((stream) => stream.id === this.remoteScreenStreamId));
 
       // Track frame delivery / unmute listeners
       track.onunmute = () => {
@@ -321,7 +316,7 @@ export class WebRTCManager {
     };
 
     // If local stream already exists, add its tracks now
-    if (this.localStream) {
+    if (this.localStream && !answering) {
       this.addLocalTracksToPC(pc);
     }
 
@@ -429,19 +424,11 @@ export class WebRTCManager {
     const targetName = this.role === 'host' ? 'PARTICIPANT' : 'HOST';
 
     for (const track of this.localStream.getTracks()) {
-      // Find matching transceiver of the same kind, excluding dedicated screen sender
-      let transceiver = pc.getTransceivers().find(
-        (t) =>
-          t.sender !== this.screenSender &&
-          (t.sender.track?.id === track.id ||
-            (t.sender.track === null && t.receiver.track.kind === track.kind))
+      const matches = pc.getTransceivers().filter(
+        (t) => t.sender !== this.screenSender && t.receiver.track.kind === track.kind,
       );
-
-      if (!transceiver) {
-        transceiver = pc.getTransceivers().find(
-          (t) => t.sender !== this.screenSender && t.receiver.track.kind === track.kind
-        );
-      }
+      // Prefer negotiated media sections to unassigned transceivers.
+      const transceiver = matches.find((t) => t.mid !== null) ?? matches[0];
 
       if (transceiver) {
         // Guarantee sendrecv direction so sending media is permitted
@@ -601,7 +588,7 @@ export class WebRTCManager {
     }
     const pc = this.pc!;
 
-    if (pc.signalingState !== 'stable') {
+    if (this.isMakingOffer || pc.signalingState !== 'stable') {
       this.callbacks.onLog(`[OFFER CREATE] Skipping: signalingState is ${pc.signalingState} (not stable)`, 'warn');
       return null;
     }
@@ -631,6 +618,7 @@ export class WebRTCManager {
         offerToReceiveVideo: true,
       });
 
+      if (pc !== this.pc || pc.signalingState !== 'stable') return null;
       await pc.setLocalDescription(offer);
       this.inspectSDP('LOCAL', pc.localDescription?.sdp);
       this.logTransceivers();
@@ -652,7 +640,7 @@ export class WebRTCManager {
   // SECTION 7: Handle OFFER & Create ANSWER with bidirectional sendrecv
   public async handleOffer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit | null> {
     if (!this.pc) {
-      this.initPeerConnection();
+      this.initPeerConnection(undefined, true);
     }
     const pc = this.pc!;
     const collision = this.isMakingOffer || pc.signalingState !== 'stable';
@@ -684,10 +672,12 @@ export class WebRTCManager {
 
       // Ensure transceivers are set to sendrecv so answer negotiates bidirectional media,
       // but secondary video transceiver with no sender track stays recvonly
-      pc.getTransceivers().forEach((t) => {
+      const offered = pc.getTransceivers().filter((t) => t.mid !== null);
+      const camera = offered.find((t) => t.receiver.track.kind === 'video');
+      offered.forEach((t) => {
         if (this.screenSender && t.sender === this.screenSender) {
           t.direction = 'sendonly';
-        } else if (!t.sender.track && t.receiver.track.kind === 'video' && pc.getTransceivers().filter((tr) => tr.receiver.track.kind === 'video').indexOf(t) > 0) {
+        } else if (!t.sender.track && t.receiver.track.kind === 'video' && t !== camera) {
           t.direction = 'recvonly';
         } else {
           t.direction = 'sendrecv';

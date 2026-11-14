@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import type { ChatMessage } from "./Sidebar";
 import { WatchTogetherPlayer } from "./WatchTogetherPlayer";
 import { SignalingService } from "../services/SignalingService";
 import { LocalVideo } from "./LocalVideo";
@@ -26,6 +28,7 @@ interface MediaPlayerStageProps {
   onOpenMediaModal: () => void;
   onOpenInviteModal: () => void;
   onEnableMedia: () => void;
+  messages: ChatMessage[];
 }
 
 export function MediaPlayerStage({
@@ -50,9 +53,23 @@ export function MediaPlayerStage({
   onOpenMediaModal,
   onOpenInviteModal,
   onEnableMedia,
+  messages,
 }: MediaPlayerStageProps) {
+  const [reaction, setReaction] = useState<ChatMessage | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const lastMessage = messages.at(-1);
+  useEffect(() => {
+    if (!lastMessage || !["❤️", "😂", "👏", "🍿"].includes(lastMessage.text)) return;
+    setReaction(lastMessage);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setReaction(null), 2400);
+  }, [lastMessage]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
   return (
     <div className="flex-1 flex flex-col gap-4 min-w-0">
+      <div className="shared-stage">
+      {reaction && <div key={reaction.id} className="stage-reaction" aria-hidden="true">{reaction.text}</div>}
       {/* If Screen Sharing is active, render the dedicated live screen share stage */}
       {isScreenSharing ? (
         <RemoteScreenShare
@@ -72,6 +89,8 @@ export function MediaPlayerStage({
           userId={localUserId}
         />
       )}
+
+      </div>
 
       {/* WEBRTC PARTICIPANT VIDEO GRID (Real Phase 1 Video Feeds) */}
       <div className="participant-section space-y-2">

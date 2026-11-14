@@ -5,7 +5,6 @@ import {
   Monitor,
   Users,
   MessageCircle,
-  Sparkles,
   Activity,
 } from "lucide-react";
 
@@ -75,9 +74,6 @@ export function LandingPage({
       <main className="night-main">
         <section className="night-hero">
           <div className="night-intro">
-            <span className="night-eyebrow">
-              <Sparkles size={15} /> A LITTLE CLOSER, EVEN FROM AFAR
-            </span>
             <h1>
               {initialRoomCode ? (
                 <>
@@ -87,16 +83,16 @@ export function LandingPage({
                 </>
               ) : (
                 <>
-                  Different places.
+                  The picture house
                   <br />
-                  Same <em>movie night.</em>
+                  <em>for two.</em>
                 </>
               )}
             </h1>
             <p>
               {initialRoomCode
                 ? "Someone saved you a spot. Add your name and join the room."
-                : "Press play on a little together time. Share your screen, see their smile, and talk through the best bits."}
+                : "Start a private cinema, invite your favorite person, and press play together."}
             </p>
             <div className="night-perks">
               <span>
@@ -109,23 +105,13 @@ export function LandingPage({
                 <MessageCircle size={16} /> Chat & calls
               </span>
             </div>
-            <div
-              className="night-scene"
-              aria-label="Decorative illustration of a movie night"
-            >
-              <div className="night-orbit" />
-              <div className="night-mountain back" />
-              <div className="night-mountain front" />
-              <div className="night-scene-copy">
-                <span>THE BEST PART IS THE COMPANY</span>
-                <strong>
-                  A whole world.
-                  <br />A shared moment.
-                </strong>
+            <div className="picture-marquee" aria-hidden="true">
+              <div className="marquee-frame">
+                <div className="marquee-rays" />
+                <div className="marquee-moon" />
+                <div className="marquee-seat first" />
+                <div className="marquee-seat second" />
               </div>
-              <span className="night-scene-caption">
-                Your next movie night starts here.
-              </span>
             </div>
           </div>
           <section className="night-entry" aria-labelledby="entry-heading">
@@ -239,36 +225,9 @@ export function LandingPage({
             </form>
           </section>
         </section>
-        <section className="night-steps" aria-label="How it works">
-          {[
-            {
-              n: "01",
-              title: "Save them a seat",
-              text: "Create a room and send your friend the invite link.",
-            },
-            {
-              n: "02",
-              title: "Bring something to watch",
-              text: "Share your screen and pick something you both love.",
-            },
-            {
-              n: "03",
-              title: "Settle in together",
-              text: "Keep the conversation going with video, voice, and chat.",
-            },
-          ].map((step) => (
-            <article key={step.n}>
-              <span>{step.n}</span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-              </div>
-            </article>
-          ))}
-        </section>
       </main>
       <footer className="night-footer">
-        <span>BBTV · Good company, wherever you are.</span>
+        <span>BBTV Picture House</span>
         {onToggleDiagnostics && (
           <button onClick={onToggleDiagnostics}>
             <Activity size={14} /> Connection help

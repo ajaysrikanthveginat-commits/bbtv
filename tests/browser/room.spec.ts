@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('entry, invitation, two-person chat, cinema mode, and session recovery', async ({page,browser}, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('Different places');
+  await expect(page.getByRole('heading',{level:1})).toContainText('The picture house');
   await page.getByLabel('Your name').fill('Alex');
   await page.getByLabel('Room name').fill('Friday favorites');
   await expect(page.getByRole('button',{name:'Start movie night'})).toBeEnabled();
@@ -24,16 +24,22 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await page.getByRole('button',{name:'Send message',exact:true}).click();
   await expect(guest.getByText('Popcorn is ready!',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Send ❤️ reaction'}).click();
-  await expect(guest.getByText('❤️',{exact:true}).last()).toBeVisible();
+  await expect(guest.locator('.stage-reaction')).toHaveText('❤️');
   await page.screenshot({path:testInfo.outputPath('room.png'),fullPage:true});
   await page.locator('.cinema-toggle').click();
   await expect(page.locator('aside')).toBeHidden();
   await page.locator('.cinema-toggle').click();
   await expect(page.locator('aside')).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
-  await page.getByRole('button',{name:'Enable call',exact:true}).click();
-  await expect.poll(()=>guest.locator('.call-tile').first().locator('video').evaluate((v:HTMLVideoElement)=>v.videoWidth),{timeout:15000}).toBeGreaterThan(0);
+  // The guest enables video first. The host must see it without sharing a camera.
   await guest.getByRole('button',{name:'Enable call',exact:true}).click();
+  const guestFeed = page.locator('.call-tile').first().locator('video');
+  await expect(guestFeed).not.toHaveClass(/call-video-hidden/, {timeout:15000});
+  await expect.poll(()=>guestFeed.evaluate((v:HTMLVideoElement)=>v.videoWidth)).toBeGreaterThan(0);
+  await page.getByRole('button',{name:'Voice only',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Camera',exact:true})).toHaveAttribute('aria-pressed','false');
+  await page.getByRole('button',{name:'Camera',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Camera',exact:true})).toHaveAttribute('aria-pressed','true');
   for(const participant of [page,guest]) {
     await expect.poll(()=>participant.locator('.call-tile').first().locator('video').evaluate((v:HTMLVideoElement)=>v.videoWidth),{timeout:15000}).toBeGreaterThan(0);
   }
