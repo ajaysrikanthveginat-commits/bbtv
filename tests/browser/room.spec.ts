@@ -40,6 +40,8 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await expect(guest.getByText('Next feature', {exact: true})).toHaveCount(0);
   await page.locator('.watch-queue summary').click();
 
+  await expect(page.locator(".listening-poster img")).toHaveJSProperty("complete", true);
+  await expect.poll(() => page.locator(".listening-poster img").evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0);
   const light = page.getByRole('button', {name: 'Ambient light'});
   await expect(light).toHaveAttribute('aria-pressed', 'true');
   await light.click();

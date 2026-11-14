@@ -976,7 +976,7 @@ export default function App() {
         />
       ) : (
         /* 2. WATCH ROOM (When in room) */
-        <div className={`room-shell flex-1 flex flex-col min-h-screen ${cinemaMode ? 'cinema-mode' : ''}`}>
+        <div className={`room-shell listening-room flex-1 flex flex-col min-h-screen ${cinemaMode ? 'cinema-mode' : ''}`}>
           {/* Top Bar */}
           <WatchRoomTopBar
             cinemaMode={cinemaMode}

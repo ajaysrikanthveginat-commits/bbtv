@@ -1,3 +1,4 @@
+import type { PointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
   Film,
@@ -19,11 +20,14 @@ export function WatchTogetherPlayer({
   signaling,
   roomId,
   userId,
+  roster,
 }: {
   signaling: SignalingService | null;
   roomId: string;
   userId: string;
+  roster: ReactNode;
 }) {
+  const artwork = useRef<HTMLImageElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const offset = useRef(0);
@@ -140,6 +144,14 @@ export function WatchTogetherPlayer({
     `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
   const allReady =
     members.length >= 2 && members.every((id) => state?.ready.includes(id));
+  function tiltPoster(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 5;
+    const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * -4;
+    artwork.current?.style.setProperty("--poster-tilt", `rotateX(${y}deg) rotateY(${x}deg)`);
+  }
+
   return (
     <section
       ref={container}
@@ -195,19 +207,16 @@ export function WatchTogetherPlayer({
             }}
           />
         ) : (
-          <div className="watch-empty">
-            <span>
-              <Film size={36} />
-            </span>
-            <h3>The screen is yours.</h3>
-            <p>
-              {isHost
-                ? "Load a video below, or share your screen from the toolbar."
-                : "Your host is choosing what to watch."}
-            </p>
-            {isHost && <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
-              <Play size={14} /> Try the watch preview
-            </button>}
+          <div className="listening-poster" onPointerMove={tiltPoster} onPointerLeave={() => artwork.current?.style.removeProperty("--poster-tilt")}>
+            <img ref={artwork} src="/listening-poster.webp" alt="" width={960} height={850} />
+            <div className="poster-copy">
+              <h3>The Last Light</h3>
+              {isHost ? (
+                <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
+                  <Play size={14} /> Try the watch preview
+                </button>
+              ) : <p>Waiting for the host to choose a video.</p>}
+            </div>
           </div>
         )}
         {!!countdown && (
@@ -232,6 +241,26 @@ export function WatchTogetherPlayer({
             Enable playback on this device
           </button>
         )}
+      </div>
+      {roster}
+      <div className="watch-lobby">
+        <div>
+          <h3>Ready when you both are</h3>
+          <p>
+            {members.length < 2
+              ? "Invite your friend using the button above."
+              : `${state?.ready.length || 0} of ${members.length} ready · Start together with a 3-second countdown.`}
+          </p>
+        </div>
+        <button
+          className={"night-control " + (ready ? "active" : "")}
+          aria-pressed={ready}
+          disabled={!connected || !loaded}
+          onClick={() => send({ kind: "ready", ready: !ready })}
+        >
+          <Check size={17} />
+          {ready ? (state?.playing ? "Take a break" : "Ready ✓") : "I’m ready"}
+        </button>
       </div>
       <div className="watch-playback">
         <button
@@ -309,25 +338,6 @@ export function WatchTogetherPlayer({
         YouTube and subscription-service page links aren’t supported here. Use
         screen sharing for other supported content.
       </p>
-      <div className="watch-lobby">
-        <div>
-          <h3>Ready when you both are</h3>
-          <p>
-            {members.length < 2
-              ? "Invite your friend using the button above."
-              : `${state?.ready.length || 0} of ${members.length} ready · Start together with a 3-second countdown.`}
-          </p>
-        </div>
-        <button
-          className={"night-control " + (ready ? "active" : "")}
-          aria-pressed={ready}
-          disabled={!connected || !loaded}
-          onClick={() => send({ kind: "ready", ready: !ready })}
-        >
-          <Check size={17} />
-          {ready ? (state?.playing ? "Take a break" : "Ready ✓") : "I’m ready"}
-        </button>
-      </div>
       <div className="watch-options">
         <button type="button" className="night-control ambient-toggle" aria-pressed={ambient} onClick={() => setAmbient((value) => !value)}>
           <LampDesk size={15} /> Ambient light
