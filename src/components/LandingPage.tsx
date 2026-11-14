@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import { CinemaMarquee } from "./CinemaMarquee";
+import React, { useRef, useState } from "react";
 import {
   ArrowRight,
   Film,
   Play,
-  AudioLines,
-  Monitor,
-  Users,
-  MessageCircle,
+  X,
+
   Activity,
 } from "lucide-react";
 
@@ -38,6 +37,8 @@ export function LandingPage({
   onJoinRoom,
   onClearError,
 }: LandingPageProps) {
+  const previewDialog = useRef<HTMLDialogElement>(null);
+  const previewVideo = useRef<HTMLVideoElement>(null);
   const [mode, setMode] = useState<"create" | "join">(
     initialRoomCode ? "join" : "create",
   );
@@ -66,44 +67,43 @@ export function LandingPage({
           <span>
             <Film size={22} />
           </span>
-          BBTV<span className="night-brand-note">Watch Studio</span>
+          BBTV<span className="night-brand-note">Cinema Club</span>
         </a>
         <div className="night-connection" role="status">
           <i className={wsConnected ? "online" : ""} />
-          {wsConnected ? "Ready when you are" : "Connecting…"}
+          {wsConnected ? "Connected" : "Connecting…"}
         </div>
       </header>
       <main className="night-main">
         <section className="night-hero">
           <div className="night-intro">
-            <div className="studio-orbit" aria-hidden="true">
-              <div className="studio-ring ring-one" />
-              <div className="studio-ring ring-two" />
-              <div className="studio-ring ring-three" />
-              <div className="studio-signal signal-play"><Play size={38} fill="currentColor" /></div>
-              <div className="studio-signal signal-voice"><AudioLines size={25} /></div>
-              <div className="studio-signal signal-chat"><MessageCircle size={25} /></div>
-            </div>
-            <h1>{initialRoomCode ? <>You’re <em>invited.</em></> : <>Hit play.<br /><em>Stay close.</em></>}</h1>
+            <h1>{initialRoomCode ? <>Your seat<br /> <em>is saved.</em></> : <>Movie night.<br /><em>In sync.</em></>}</h1>
             <p>{initialRoomCode
-              ? "Enter your name to join your friend’s watch room."
-              : "A shared screen for friends, wherever you are."}</p>
-            <div className="night-perks">
-              <span><Users size={16} /> Two-person rooms</span>
-              <span><Monitor size={16} /> Shared playback</span>
-              <span><MessageCircle size={16} /> Voice, video & chat</span>
-            </div>
+              ? "Enter your name to join your friend’s screening."
+              : "Watch in sync, talk through the twists, and share the good parts."}</p>
+            {!initialRoomCode && <button type="button" className="night-control lobby-preview" onClick={() => {
+              previewDialog.current?.showModal();
+              previewVideo.current?.play().catch(() => {});
+            }}><Play size={15} /> Watch the preview</button>}
           </div>
+          <CinemaMarquee />
+          <dialog className="media-dialog lobby-dialog" ref={previewDialog} aria-labelledby="lobby-preview-title" onClose={() => previewVideo.current?.pause()}>
+            <div className="media-dialog-body">
+              <button type="button" className="night-control media-close" aria-label="Close preview" onClick={() => previewDialog.current?.close()}><X size={18} /></button>
+              <h2 id="lobby-preview-title">BBTV preview</h2>
+              <video ref={previewVideo} src="/bbtv-preview.webm" controls playsInline preload="none" />
+            </div>
+          </dialog>
           <section className="night-entry" aria-labelledby="entry-heading">
             <div className="night-entry-icon">
               <Film size={23} />
             </div>
             <h2 id="entry-heading">
-              {mode === "create" ? "Open a watch room" : "Join your friend"}
+              {mode === "create" ? "Get a room" : "Join your friend"}
             </h2>
             <p>
               {mode === "create"
-                ? "Send your friend the invite after you enter."
+                ? "Create a private screening for two."
                 : "Use the room code from your invitation."}
             </p>
             <div className="night-tabs" aria-label="Room action">
@@ -199,15 +199,13 @@ export function LandingPage({
                     : "Join movie night"}
                 <ArrowRight size={18} />
               </button>
-              <p className="night-form-hint">
-                No account needed. Camera and mic are your choice.
-              </p>
+              
             </form>
           </section>
         </section>
       </main>
       <footer className="night-footer">
-        <span>BBTV Watch Studio</span>
+        <span>BBTV Cinema Club</span>
         {onToggleDiagnostics && (
           <button onClick={onToggleDiagnostics}>
             <Activity size={14} /> Connection help

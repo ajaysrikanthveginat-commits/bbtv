@@ -909,3 +909,100 @@ button:disabled {
   .night-perks { font-size: 11px; gap: 7px 12px; }
   .queue-body form { grid-template-columns: 1fr; }
 }
+
+/* Cinema Club: a projected screen and ticket suspended in CSS 3D space. */
+:root {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --house-ink: #100f17;
+  --house-border: #eac6d327;
+  --house-paper: #faf0ed;
+  --house-gold: #ffac83;
+  --house-muted: #c7bacb;
+}
+.night-home, .room-shell {
+  background: radial-gradient(ellipse at 73% 34%, #3c2039 0%, transparent 45%), radial-gradient(ellipse at 11% 4%, #2c1f43 0%, transparent 44%), var(--house-ink);
+}
+.night-nav, .night-main, .night-footer { max-width: 1440px; }
+.night-nav { height: 82px; }
+.night-home .night-hero {
+  position: relative; isolation: isolate; max-width: none;
+  grid-template-columns: minmax(0,1.25fr) minmax(340px,.8fr);
+  gap: 0 clamp(36px,7vw,105px); padding: 54px 0 40px;
+}
+.night-home .night-intro { align-self: end; position: relative; z-index: 1; }
+.night-intro h1 { font-size: clamp(3.5rem,7.25vw,7rem); letter-spacing: -.078em; line-height: .9; margin: 0 0 20px; }
+.night-intro h1 em { background: linear-gradient(112deg,#ffd2af 5%,#ff946f 57%,#ffc6db); background-clip: text; color: transparent; }
+.night-intro > p { max-width: 360px; font-size: 16px; }
+.night-home .night-entry { grid-column: 2; grid-row: 1 / span 2; z-index: 1; }
+.night-entry, .watch-player, .room-sidebar, .media-dialog, .call-tile {
+  background: linear-gradient(145deg,#282334,#1b1924 65%); border-color: var(--house-border);
+}
+.night-entry { box-shadow: 0 28px 80px #08060e99; border-radius: 25px; }
+.night-entry-icon { background: #ffac8322; }
+.night-tabs, .watch-source, .invite-link, .night-entry form > input { background: #16131f; }
+.night-room-header, .night-dock { background: #191622f7; }
+.night-control, .night-tabs button[aria-pressed="true"], .media-option { background: #302737; }
+.night-control:hover, .media-option:hover { background: #473348; }
+.night-primary, .night-control.active { background: #ffac83; color: #311915; border-color: #ffac83; }
+.night-primary:hover:not(:disabled), .night-control.active:hover { background: #ffd1b9; }
+.marquee-scene { position: relative; height: clamp(245px,27vw,370px); perspective: 850px; margin-top: 10px; isolation: isolate; }
+.marquee-halo { position: absolute; inset: 1% 0 -6%; background: radial-gradient(ellipse at center,#f9898860,transparent 68%); }
+.marquee-grid { position: absolute; inset: 28% 0 -13%; opacity: .36; background-image: linear-gradient(#efabde2c 1px,transparent 1px),linear-gradient(90deg,#efabde2c 1px,transparent 1px); background-size: 25px 25px; transform: rotateX(49deg); mask-image: radial-gradient(ellipse,#000 6%,transparent 70%); }
+.marquee-object {
+  position: absolute; left: 10%; right: 10%; top: 12%; bottom: 12%;
+  transform-style: preserve-3d; transform: rotateX(calc(11deg + var(--pitch,0deg))) rotateY(calc(-15deg + var(--yaw,0deg))) rotateZ(-5deg);
+  transition: transform .26s ease-out;
+}
+.marquee-shadow { position: absolute; inset: 10% 0 -5%; border-radius: 42px; transform: translateZ(-33px); background: #544066; box-shadow: 0 24px 65px #090610cc; }
+.marquee-display { position: absolute; inset: 0 0 9%; display: grid; transform: translateZ(32px); border: 1px solid #f5c8ff84; border-radius: 31px; padding: 12px; background: linear-gradient(135deg,#c2a8e1,#524064 48%,#b395bc); box-shadow: 0 10px 0 #40304d, 0 24px 40px #10091dcc; }
+.marquee-picture { position: relative; overflow: hidden; border-radius: 22px; background: radial-gradient(ellipse at 63% 60%,#ff956d,#883967 55%,#2c1b46); }
+.marquee-picture::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 36px #210e4c60; background: repeating-linear-gradient(#fff0 0 5px,#fff1 5px 6px); pointer-events:none; }
+.marquee-sun { position: absolute; top: 18%; left: 47%; width: 31%; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(#ffdfaa,#ff9e79); box-shadow: 0 0 56px #ffb18cd9; }
+.marquee-ridge { position: absolute; width: 63%; height: 100%; bottom: -63%; transform: rotate(25deg); border-radius: 18%; background: linear-gradient(135deg,#61325c,#2d1b45); }
+.ridge-front { right: -5%; bottom: -58%; transform: rotate(-22deg); background: linear-gradient(135deg,#36274e,#181533); }
+.marquee-play { position: absolute; z-index:1; top:50%; left:50%; transform:translate(-50%,-50%); display:grid; place-items:center; width:63px; height:63px; border-radius:50%; border:1px solid #fff7; background:#1a12265c; color:white; backdrop-filter:blur(10px); }
+.marquee-play svg { translate: 2px; }
+.marquee-ticket, .marquee-audio { position: absolute; display: grid; place-items: center; box-shadow: 0 15px 45px #190d2a88; animation: cinema-drift 5s ease-in-out infinite; }
+.marquee-ticket { bottom: 0; left: -6%; transform: translateZ(90px) rotate(-12deg); grid-auto-flow: column; gap: 4px; border: 1px solid #ffe6d8; border-radius: 12px; background:#ffc29d; color:#351729; padding: 13px; font:700 15px var(--font-display); }
+.marquee-ticket i { display:block; width:2px; height:18px; background:#4e253a; }
+.marquee-ticket i:nth-child(2) { width:1px; }
+.marquee-ticket span { margin-left: 8px; }
+.marquee-audio { right:-5%; top:17%; width:54px; height:54px; transform:translateZ(75px) rotate(14deg); animation-delay:-2s; background:#d8c6f4; color:#3c215a; border:1px solid #fff; border-radius:17px; }
+@keyframes cinema-drift { 50% { translate: 0 -12px; } }
+.watch-canvas { background: #0d0a13; }
+.watch-canvas:has(.watch-empty) { background: radial-gradient(ellipse at 50% 20%, #56314d, #181322 58%, #100e18 92%); }
+.ambient-on .watch-canvas { box-shadow: 0 0 42px #ff895f42, 0 0 0 1px #ffc9b13b; }
+.watch-canvas { transition: box-shadow .36s ease; }
+.watch-countdown { background:#ffac83; color:#321917; border-color:#ffe4d6; }
+.call-viewport { background: radial-gradient(ellipse at 50% 120%,#533345,#221b2e); }
+.invite-ticket { background: linear-gradient(130deg,#593444,#2a2033); border-color: #ffac8355; }
+.ambient-toggle { padding:7px 10px; }
+.ambient-toggle[aria-pressed="true"] { color:#ffccaf; border-color:#ffac8380; }
+.queue-body input, .queue-body li { background:#17141f; }
+
+@media(max-width: 800px) {
+  .night-home .night-hero { grid-template-columns: minmax(0,1fr); padding: 30px 0; }
+  .night-home .night-entry { grid-column: 1; grid-row: auto; }
+  .night-intro h1 { font-size: clamp(3.25rem,11vw,5rem); }
+  .marquee-scene { height: clamp(196px,61vw,315px); margin: 9px auto 23px; width: min(100%,500px); }
+  .marquee-display { border-radius:23px; padding:8px; }
+  .marquee-picture { border-radius:16px; }
+  .marquee-ticket { padding: 9px; }
+  .marquee-audio { width:42px; height:42px; border-radius:12px; }
+  .marquee-play { width:48px; height:48px; }
+}
+.lobby-preview { margin-top: 19px; width: fit-content; }
+.lobby-dialog video { width: 100%; aspect-ratio: 16 / 9; background: #09080f; border-radius: 13px; }
+.lobby-dialog h2 { padding-right: 44px; }
+.cinema-layout { display: grid; gap: 18px; align-items: start; grid-template-columns: minmax(0,1fr) minmax(290px,370px); }
+.cinema-companion { display: grid; gap: 16px; min-width: 0; }
+.cinema-companion .room-sidebar { width: 100%; position: static; height: min(460px,60vh); max-height: none; }
+.cinema-companion .call-viewport { height: 116px; }
+.cinema-call-link { color:#ffc8ab; }
+.cinema-mode .cinema-layout { grid-template-columns: minmax(0,1fr); }
+.cinema-mode .cinema-companion { display:none; }
+@media(max-width: 960px) {
+  .cinema-layout { grid-template-columns: minmax(0,1fr); }
+  .cinema-companion .room-sidebar { height: 390px; }
+}
