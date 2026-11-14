@@ -1123,3 +1123,33 @@ button:disabled {
   }
   .listening-room .watch-lobby .night-control { font: italic 24px "Instrument Serif", Georgia, serif; }
 }
+
+/* Carry the screening room's printed-program look into the entrance. */
+.listening-home {
+  --house-ink: #f4e7d6;
+  --house-paper: #2d201c;
+  --house-muted: #705346;
+  --house-gold: #514a89;
+  --house-border: #bca991;
+  --font-display: "Instrument Serif", Georgia, serif;
+  color: var(--house-paper);
+  background: var(--house-ink);
+}
+.listening-home .night-brand > span:first-child,
+.listening-home .night-entry-icon { background: #e5d5c1; color: #514a89; }
+.listening-home .night-intro h1 { font-weight: 400; letter-spacing: -.045em; }
+.listening-home .night-intro h1 em { background: none; color: #514a89; font-style: italic; }
+.listening-home .night-entry { background: #f9efe2; box-shadow: none; }
+.listening-home .night-tabs, .listening-home .night-entry form > input { background: #ede0ce; color: #2d201c; }
+.listening-home .night-tabs button { color: #644d41; }
+.listening-home .night-tabs button[aria-pressed="true"] { background: #dfd0be; color: #2d201c; }
+.listening-home .night-control { background: #e9d8c4; color: #2d201c; border-color: #bcaa93; }
+.listening-home .night-primary { background: #514a89; color: #fffaf3; border-color: #514a89; }
+.listening-home .night-primary:hover:not(:disabled) { background: #413973; }
+.listening-home .night-connection i.online { background: #3b7555; box-shadow: none; }
+.listening-lobby-art { margin: 24px 0 0; }
+.listening-lobby-art img { display: block; width: 100%; height: clamp(210px, 27vw, 390px); object-fit: cover; object-position: center 59%; }
+@media(max-width: 800px) {
+  .listening-home .listening-lobby-art { grid-row: 3; margin-top: 24px; }
+  .listening-home .night-entry { margin-top: 22px; }
+}

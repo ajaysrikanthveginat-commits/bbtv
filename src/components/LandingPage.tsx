@@ -1,4 +1,3 @@
-import { CinemaMarquee } from "./CinemaMarquee";
 import React, { useRef, useState } from "react";
 import {
   ArrowRight,
@@ -61,13 +60,13 @@ export function LandingPage({
       });
   };
   return (
-    <div className="night-home">
+    <div className="night-home listening-home">
       <header className="night-nav">
         <a className="night-brand" href="/" aria-label="BBTV home">
           <span>
             <Film size={22} />
           </span>
-          BBTV<span className="night-brand-note">Cinema Club</span>
+          BBTV<span className="night-brand-note">The Listening Room</span>
         </a>
         <div className="night-connection" role="status">
           <i className={wsConnected ? "online" : ""} />
@@ -86,7 +85,9 @@ export function LandingPage({
               previewVideo.current?.play().catch(() => {});
             }}><Play size={15} /> Watch the preview</button>}
           </div>
-          <CinemaMarquee />
+          <figure className="listening-lobby-art">
+            <img src="/listening-poster.webp" alt="A framed forest film poster in a warmly lit cinema alcove" width={1184} height={1029} />
+          </figure>
           <dialog className="media-dialog lobby-dialog" ref={previewDialog} aria-labelledby="lobby-preview-title" onClose={() => previewVideo.current?.pause()}>
             <div className="media-dialog-body">
               <button type="button" className="night-control media-close" aria-label="Close preview" onClick={() => previewDialog.current?.close()}><X size={18} /></button>
@@ -99,7 +100,7 @@ export function LandingPage({
               <Film size={23} />
             </div>
             <h2 id="entry-heading">
-              {mode === "create" ? "Get a room" : "Join your friend"}
+              {mode === "create" ? "Open a screening room" : "Join your friend"}
             </h2>
             <p>
               {mode === "create"
@@ -205,7 +206,7 @@ export function LandingPage({
         </section>
       </main>
       <footer className="night-footer">
-        <span>BBTV Cinema Club</span>
+        <span>BBTV The Listening Room</span>
         {onToggleDiagnostics && (
           <button onClick={onToggleDiagnostics}>
             <Activity size={14} /> Connection help
