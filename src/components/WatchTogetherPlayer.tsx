@@ -13,6 +13,8 @@ import {
   LampDesk,
   Coffee,
   ThumbsUp,
+  BookmarkPlus,
+  Clock3,
 } from "lucide-react";
 import { SignalingService } from "../services/SignalingService";
 import { WatchAction, WatchState, watchPosition } from "../shared/watch";
@@ -32,6 +34,8 @@ export function WatchTogetherPlayer({
   const [state, setState] = useState<WatchState | null>(null);
   const [host, setHost] = useState("");
   const [members, setMembers] = useState<string[]>([]);
+  const [panel, setPanel] = useState<"moments" | "queue" | "settings">("moments");
+  const [momentLabel, setMomentLabel] = useState("");
   const [url, setUrl] = useState("");
   const [queuedTitle, setQueuedTitle] = useState("");
   const [queuedUrl, setQueuedUrl] = useState("");
@@ -108,6 +112,7 @@ export function WatchTogetherPlayer({
   }, [signaling, roomId, userId]);
   useEffect(() => {
     setLoaded(false);
+    setPosition(0);
     setBlocked(false);
     setDuration(0);
     setError("");
@@ -211,12 +216,13 @@ export function WatchTogetherPlayer({
             <h3>The screen is yours.</h3>
             <p>
               {isHost
-                ? "Load a video below, or share your screen from the toolbar."
+                ? "Add a video in Setup, or share your screen from the toolbar."
                 : "Your host is choosing what to watch."}
             </p>
             {isHost && <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
               <Play size={14} /> Try the watch preview
             </button>}
+            {isHost && <button className="night-control cut-add-source" onClick={() => { setPanel("settings"); requestAnimationFrame(() => document.getElementById("video-source")?.focus()); }}>Add a video link</button>}
           </div>
         )}
         {!!countdown && (
@@ -288,6 +294,52 @@ export function WatchTogetherPlayer({
           <Maximize size={17} />
         </button>
       </div>
+      <div className="watch-lobby">
+        <div>
+          <h3>Ready when you both are</h3>
+          <p>
+            {members.length < 2
+              ? "Invite your friend using the button above."
+              : `${state?.ready.length || 0} of ${members.length} ready · Start together with a 3-second countdown.`}
+          </p>
+        </div>
+        <button
+          className={"night-control " + (ready ? "active" : "")}
+          aria-pressed={ready}
+          disabled={!connected || !loaded}
+          onClick={() => send({ kind: "ready", ready: !ready })}
+        >
+          <Check size={17} />
+          {ready ? (state?.playing ? "Take a break" : "Ready ✓") : "I’m ready"}
+        </button>
+      </div>
+      {error && (
+        <p className="night-error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="cut-panels" role="group" aria-label="Screening tools">
+        <button aria-pressed={panel === "moments"} onClick={() => setPanel("moments")}><Clock3 size={15}/> Moments <span>{state?.moments.length ?? 0}</span></button>
+        <button aria-pressed={panel === "queue"} onClick={() => setPanel("queue")}><ListVideo size={15}/> Up next <span>{queue.length}</span></button>
+        <button data-open-source aria-pressed={panel === "settings"} onClick={() => setPanel("settings")}><LampDesk size={15}/> Setup</button>
+      </div>
+      <section className="cut-moments" hidden={panel !== "moments"}>
+        <p>Pin a scene for both of you. Select its timestamp to go back together.</p>
+        <form onSubmit={(event) => {
+          event.preventDefault();
+          if (momentLabel.trim()) { send({kind:"moment-add", label:momentLabel}); setMomentLabel(""); }
+        }}>
+          <label className="sr-only" htmlFor="moment-label">Moment name</label>
+          <input id="moment-label" value={momentLabel} onChange={event=>setMomentLabel(event.target.value)} maxLength={48} placeholder="Name this moment" disabled={!loaded || !connected} required />
+          <button className="night-control active" disabled={!loaded || !connected || !momentLabel.trim()}><BookmarkPlus size={16}/> Pin {time(position)}</button>
+        </form>
+        <ol>{state?.moments.map(moment => <li key={moment.id}>
+          <button className="night-control" aria-label={`Jump to ${moment.label}`} disabled={!canControl || !loaded} onClick={()=>send({kind:"moment-seek",id:moment.id})}>{time(moment.position)}</button>
+          <span>{moment.label}</span>
+          {(isHost || moment.actor === userId) && <button className="night-control" aria-label={`Remove moment ${moment.label}`} disabled={!connected} onClick={()=>send({kind:"moment-remove",id:moment.id})}><X size={15}/></button>}
+        </li>)}</ol>
+      </section>
+      <div className="cut-settings" hidden={panel !== "settings"}>
       {isHost && (
         <form
           className="watch-source"
@@ -318,25 +370,6 @@ export function WatchTogetherPlayer({
         YouTube and subscription-service page links aren’t supported here. Use
         screen sharing for other supported content.
       </p>
-      <div className="watch-lobby">
-        <div>
-          <h3>Ready when you both are</h3>
-          <p>
-            {members.length < 2
-              ? "Invite your friend using the button above."
-              : `${state?.ready.length || 0} of ${members.length} ready · Start together with a 3-second countdown.`}
-          </p>
-        </div>
-        <button
-          className={"night-control " + (ready ? "active" : "")}
-          aria-pressed={ready}
-          disabled={!connected || !loaded}
-          onClick={() => send({ kind: "ready", ready: !ready })}
-        >
-          <Check size={17} />
-          {ready ? (state?.playing ? "Take a break" : "Ready ✓") : "I’m ready"}
-        </button>
-      </div>
       <div className="watch-options">
         <button type="button" className="night-control" disabled={!connected || !loaded || breakSeconds > 0} onClick={() => send({kind:"intermission"})}>
           <Coffee size={15} /> 1-minute intermission
@@ -376,13 +409,8 @@ export function WatchTogetherPlayer({
           </span>
         )}
       </div>
-      {error && (
-        <p className="night-error" role="alert">
-          {error}
-        </p>
-      )}
-      <details className="watch-queue">
-        <summary><ListVideo size={19} /> Up next <span>{queue.length} / 8</span></summary>
+      </div>
+      <section className="watch-queue" hidden={panel !== "queue"} aria-label="Up next">
         <div className="queue-body">
           {queue.length === 0 && <p>Either person can suggest a video. The host picks what plays next.</p>}
           {queue.length > 0 && <ol>{queue.map((entry) => (
@@ -414,7 +442,7 @@ export function WatchTogetherPlayer({
             <button className="night-control active" disabled={!connected || queue.length >= 8}><Plus size={16}/> Add to queue</button>
           </form>
         </div>
-      </details>
+      </section>
     </section>
   );
 }

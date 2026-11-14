@@ -50,7 +50,10 @@ export function ChangeMediaModal({
           onClick={() => {
             onClose();
             window.setTimeout(
-              () => document.getElementById("video-source")?.focus(),
+              () => {
+                document.querySelector<HTMLButtonElement>("[data-open-source]")?.click();
+                requestAnimationFrame(() => document.getElementById("video-source")?.focus());
+              },
               0,
             );
           }}

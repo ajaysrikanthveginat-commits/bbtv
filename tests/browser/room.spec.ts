@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('entry, invitation, two-person chat, cinema mode, and session recovery', async ({page,browser}, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('Two seats.');
+  await expect(page.getByRole('heading',{level:1})).toContainText('The shared');
   await page.getByRole('button', {name: 'Play the preview'}).click();
   await expect(page.getByRole('dialog', {name: 'BBTV preview'})).toBeVisible();
   await expect.poll(() => page.locator("dialog[aria-label='BBTV preview'] video").evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0);
@@ -29,18 +29,18 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await expect(guest.getByText('Popcorn is ready!',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Send ❤️ reaction'}).click();
   await expect(guest.locator('.stage-reaction')).toHaveText('❤️');
-  await guest.locator('.watch-queue summary').click();
+  await guest.getByRole('button', {name: /^Up next/}).click();
   await guest.getByLabel('Video title').fill('Next feature');
   await guest.getByLabel('Video URL').fill('https://media.example.test/feature.mp4');
   await guest.getByRole('button', {name: 'Add to queue'}).click();
-  await page.locator('.watch-queue summary').click();
+  await page.getByRole('button', {name: /^Up next/}).click();
   await expect(page.getByText('Next feature', {exact: true})).toBeVisible();
   await guest.getByRole('button', {name: 'Vote for Next feature'}).click();
   await expect(page.getByRole('button', {name: 'Vote for Next feature'})).toHaveText('1');
   await expect(guest.getByRole('button', {name: 'Remove Next feature'})).toHaveCount(0);
   await page.getByRole('button', {name: 'Remove Next feature'}).click();
   await expect(guest.getByText('Next feature', {exact: true})).toHaveCount(0);
-  await page.locator('.watch-queue summary').click();
+  await page.getByRole('button', {name: 'Setup', exact:true}).click();
 
   const light = page.getByRole('button', {name: 'Ambient light'});
   await expect(light).toHaveAttribute('aria-pressed', 'true');
@@ -105,9 +105,14 @@ test('actual media playback stays together after countdown, seek, and break', as
     if(await unblock.isVisible())await unblock.click();
     await expect.poll(async()=>await p.locator('.watch-canvas video').evaluate((v:HTMLVideoElement)=>v.currentTime>0)).toBe(true);
   }
+  await guest.getByRole('button', {name: 'Setup', exact:true}).click();
   await guest.getByRole('button',{name:'1-minute intermission'}).click();
   await expect(page.locator('.intermission-card')).toContainText('Intermission');
   await expect(page.locator('.watch-status')).toHaveText('Paused');
+  await guest.getByRole('button', {name: /^Moments/}).click();
+  await guest.getByLabel('Moment name').fill('Opening shot');
+  await guest.getByRole('button', {name: /^Pin /}).click();
+  await expect(page.getByRole('button', {name: 'Jump to Opening shot'})).toBeVisible();
   const timeline = page.getByLabel('Playback position');
   const bounds = await timeline.boundingBox();
   if (!bounds) throw new Error('Playback timeline is not visible');
