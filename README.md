@@ -1,6 +1,6 @@
 # BBTV · Better together
 
-A two-person movie room with synchronized video playback, chat, and optional video calls. Create a room, send its invitation, choose a direct video link, and press play when you are both ready.
+A two-person movie room with synchronized video playback, chat, and optional video calls. Create a room, send its invitation, choose a direct video link or the built-in preview, and press play when you are both ready.
 
 ## Included
 
@@ -40,11 +40,10 @@ npm test
 npm run test:integration
 ```
 
-Browser tests need Chromium and a generated video fixture. The GitHub Actions workflow installs these, exercises desktop/mobile room flows and two-browser playback, and uploads screenshots and traces. To run locally with ffmpeg installed:
+The GitHub Actions workflow installs Chromium, exercises desktop and mobile room flows and two-browser playback, and uploads screenshots and traces. To run locally:
 
 ```sh
 npx playwright install --with-deps chromium
-ffmpeg -f lavfi -i testsrc=size=320x180:rate=10 -t 20 -c:v libvpx-vp9 -pix_fmt yuv420p tests/browser/fixture.webm
 npm run test:browser
 ```
 

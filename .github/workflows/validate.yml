@@ -20,8 +20,6 @@ jobs:
       - run: npm test
       - run: npm run test:integration
       - run: npx playwright install --with-deps chromium
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: ffmpeg -f lavfi -i testsrc=size=320x180:rate=10 -t 20 -c:v libvpx-vp9 -pix_fmt yuv420p tests/browser/fixture.webm
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4
         if: always()

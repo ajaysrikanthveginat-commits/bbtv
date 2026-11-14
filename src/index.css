@@ -750,3 +750,6 @@ button:disabled {
 @media(min-width:1024px){.watch-canvas{aspect-ratio:auto;height:clamp(280px,42vh,560px)}}
 @media(max-width:1023px){.room-sidebar{position:static;max-height:none;height:420px}.call-viewport{height:130px}}
 @media(max-width:420px){.call-caption{font-size:10px;padding:9px}.call-caption small{font-size:9px}.call-placeholder{font-size:10px}}
+
+.watch-preview{margin:16px auto 0}
+@media(max-width:720px){.watch-empty{padding:12px}.watch-preview{margin-top:9px}.watch-empty>span{width:38px;height:38px}}

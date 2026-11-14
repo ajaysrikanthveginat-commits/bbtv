@@ -221,6 +221,9 @@ export function WatchTogetherPlayer({
                 ? "Add a video link above, or share your screen from the toolbar."
                 : "Your host is choosing something to watch. Get comfortable."}
             </p>
+            {isHost && <button className="night-control watch-preview" disabled={!connected} onClick={() => send({ kind: "preview" })}>
+              <Play size={14} /> Try the watch preview
+            </button>}
           </div>
         )}
         {!!countdown && (

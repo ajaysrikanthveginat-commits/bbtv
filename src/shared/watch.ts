@@ -9,6 +9,7 @@ export interface WatchState {
 }
 export type WatchAction =
   | { kind: "source"; url: string }
+  | { kind: "preview" }
   | { kind: "ready"; ready: boolean }
   | { kind: "start" }
   | { kind: "pause" }
@@ -56,10 +57,12 @@ export function changeWatch(
     actor !== host &&
     (!state.allowControl ||
       action.kind === "permission" ||
-      action.kind === "source")
+      action.kind === "source" || action.kind === "preview")
   )
     throw new Error("Only the host can do that.");
   switch (action.kind) {
+    case "preview":
+      return { ...next, url: "/bbtv-preview.webm", playing: false, position: 0, updatedAt: now, ready: [] };
     case "source": {
       if (typeof action.url !== "string" || action.url.length > 4096)
         throw new Error("Enter a valid HTTPS video URL.");
