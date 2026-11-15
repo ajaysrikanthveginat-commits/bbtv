@@ -1237,3 +1237,28 @@ button:disabled {
   .salon-submit { grid-column:1/-1; }
   .salon-room .cinema-companion .room-sidebar { bottom:76px; }
 }
+
+/* Photograph as the entrance backdrop, with an isolated scrim for readable text. */
+.salon-hero {
+  display:grid; grid-template-columns:minmax(0,1fr); align-items:end;
+  position:relative; isolation:isolate; min-height:clamp(470px,43vw,650px);
+  padding:clamp(26px,5vw,72px); overflow:hidden; background:#281917;
+}
+.salon-hero::before,.salon-hero::after { content:""; position:absolute; inset:0; pointer-events:none; }
+.salon-hero::before { z-index:-2; background:url("/screening-salon.webp") center 61%/cover no-repeat; animation:salon-project 1.15s cubic-bezier(.2,.7,.2,1) both; }
+.salon-hero::after { z-index:-1; background:linear-gradient(90deg,#1c0d0ce8 0%,#1c0d0c9c 42%,transparent 80%),linear-gradient(0deg,#140a0ab5,transparent 57%); }
+.salon-intro { color:#fff6e9; animation:salon-arrive .85s .08s cubic-bezier(.2,.7,.2,1) both; }
+.salon-intro h1 em { color:#f3c094; }
+.salon-intro p { color:#f1e2d5; }
+.salon-preview { color:#fff6e9; border-color:#ffefda80; }
+.salon-preview:hover { color:#ffd098; }
+.salon-booking { border-top:0; padding-top:12px; animation:salon-arrive .65s .15s both; }
+.salon-room .watch-countdown { background:#e6c290; border-color:#fff0cf; color:#251816; box-shadow:0 5px 40px #120d0daa; }
+.salon-room .cut-panels button[aria-pressed=true] { transition:color .2s,border-color .2s; }
+@media(max-width:720px) {
+  .salon-home main { padding-inline:16px; }
+  .salon-hero { min-height:clamp(320px,93vw,425px); padding:19px; }
+  .salon-hero::before { background-position:59% 62%; }
+  .salon-hero::after { background:linear-gradient(0deg,#1c0d0cee,#1c0d0c60 68%,transparent); }
+  .salon-intro h1 { font-size:clamp(64px,17vw,105px); }
+}

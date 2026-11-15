@@ -45,7 +45,7 @@ export function LandingPage(p: LandingPageProps) {
             <p>{p.initialRoomCode ? "Your friend invited you to a private screening." : "A private screening room for you and one friend. Watch in sync and talk whenever you like."}</p>
             <button className="salon-preview" type="button" onClick={() => { dialog.current?.showModal(); preview.current?.play().catch(() => {}); }}><Play size={15} /> Play the preview</button>
           </div>
-          <figure className="salon-art"><img src="/screening-salon.webp" width={1360} height={1020} alt="Two velvet seats facing an amber-lit arch in a private cinema" fetchPriority="high" /></figure>
+
         </div>
         <section className="salon-booking" aria-label="Room setup">
           <div className="salon-booking-modes" aria-label="Room action">
