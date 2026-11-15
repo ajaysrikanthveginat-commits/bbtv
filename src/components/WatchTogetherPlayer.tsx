@@ -213,7 +213,7 @@ export function WatchTogetherPlayer({
             <span>
               <Film size={36} />
             </span>
-            <h3>The screen is yours.</h3>
+            <h3>Choose tonight’s film.</h3>
             <p>
               {isHost
                 ? "Add a video in Setup, or share your screen from the toolbar."

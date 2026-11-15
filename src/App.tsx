@@ -62,7 +62,7 @@ export default function App() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const [isDiagnosticsModalOpen, setIsDiagnosticsModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [cinemaMode, setCinemaMode] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState<'chat' | 'people'>('chat');
 
@@ -871,6 +871,7 @@ export default function App() {
     setRemoteUserId(null);
     setRemoteStream(null);
     setMessages([]);
+    setIsSidebarOpen(false);
     setErrorMessage(null);
     setIsSubmitting(false);
 
@@ -976,7 +977,7 @@ export default function App() {
         />
       ) : (
         /* 2. WATCH ROOM (When in room) */
-        <div className={`room-shell cut-room flex-1 flex flex-col min-h-screen ${cinemaMode ? 'cinema-mode' : ''}`}>
+        <div className={`room-shell cut-room salon-room flex-1 flex flex-col min-h-screen ${cinemaMode ? 'cinema-mode' : ''}`}>
           {/* Top Bar */}
           <WatchRoomTopBar
             cinemaMode={cinemaMode}
@@ -1052,6 +1053,7 @@ export default function App() {
               messages={messages}
               companion={isSidebarOpen && (
                 <Sidebar
+                  onClose={() => setIsSidebarOpen(false)}
                   activeTab={activeSidebarTab}
                   onTabChange={setActiveSidebarTab}
                   messages={messages}
