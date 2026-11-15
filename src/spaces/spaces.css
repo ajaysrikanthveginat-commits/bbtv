@@ -50,7 +50,7 @@
 .spaces-hero-action {
   min-height:51px; display:flex; align-items:center; gap:22px; padding:0 17px 0 20px; border:1px solid #fff4d4;
   border-radius:999px; color:#263024; background:#fff4d4; font-size:14px; font-weight:720;
-  transition:background .24s,border-color .24s,box-shadow .3s;
+  transition:background .24s,border-color .24s,box-shadow .3s,scale .24s var(--ease);
 }
 .spaces-hero-action:hover { background:#fffaf0; border-color:#fffaf0; box-shadow:0 6px 24px #f4d69a33; }
 .spaces-hero-action:focus-visible { outline-color:#fff4d4; }
@@ -62,9 +62,9 @@
 .spaces-activities > p { color:var(--soft); max-width:34ch; }
 .activity-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
 .activity-grid button {
-  text-align:left; display:flex; align-items:center; gap:12px; min-height:73px; padding:12px; border-radius:13px;
+  position:relative; isolation:isolate; text-align:left; display:flex; align-items:center; gap:12px; min-height:73px; padding:12px; border-radius:13px;
   border:1px solid var(--line); color:var(--ink); background:var(--surface);
-  transition:background .24s,border-color .24s,box-shadow .32s var(--ease),translate .32s var(--ease);
+  transition:background .24s,border-color .24s,box-shadow .32s var(--ease),translate .32s var(--ease),scale .24s var(--ease);
 }
 .activity-grid button[aria-pressed="true"] { border-color:#78856b; background:#e7ecdd; }
 .activity-grid button:hover { border-color:#78856b; }
@@ -197,10 +197,12 @@
   .spaces-hero-copy > .spaces-overline,.spaces-hero-copy > p,.spaces-hero-action { animation:space-rise .68s var(--ease) backwards; }
   .spaces-hero-copy > p { animation-delay:.27s; }
   .spaces-hero-action { animation-delay:.35s; }
-  .spaces-hero-action svg,.spaces-classic svg,.space-entry button svg { transition:translate .33s var(--ease); }
-  .spaces-hero-action:hover svg,.space-entry button:hover:not(:disabled) svg { translate:4px 0; }
+  .spaces-hero-action svg,.spaces-classic svg,.space-entry button svg,.spaces-return li button svg { transition:translate .33s var(--ease); }
+  .spaces-hero-action:hover svg,.space-entry button:hover:not(:disabled) svg,.spaces-return li button:hover:not(:disabled) svg { translate:4px 0; }
   .spaces-classic:hover svg { translate:2px 2px; }
-  .activity-grid button:active,.space-button:active:not(:disabled),.space-icon:active:not(:disabled) { scale:.97; }
+  .spaces-hero-action:active,.activity-grid button:active,.space-button:active:not(:disabled),.space-icon:active:not(:disabled) { scale:.97; }
+  .space-dock button svg { transition:scale .29s var(--ease); }
+  .space-dock button:hover:not(:disabled) svg { scale:1.12; }
   .stage-heading h1,.board-title { animation:space-rise .39s var(--ease) backwards; }
   .space-board,.room-presentation,.space-tile:not(.empty-seat),.space-invite[open] { animation:space-rise .45s var(--ease) backwards; }
   .space-invite[open]::backdrop { animation:space-fade .25s ease-out backwards; }
@@ -210,9 +212,22 @@
 }
 @media(prefers-reduced-motion:no-preference) and (hover:hover) and (pointer:fine) {
   .spaces-hero-photo img {
-    transform:translate3d(var(--lounge-x,0px),var(--lounge-y,0px),0) scale(1.035);
+    transform:translate3d(calc((var(--pointer-x,.5) - .5) * 20px),calc((var(--pointer-y,.5) - .5) * 14px),0) scale(1.035);
     transition:transform .59s var(--ease);
   }
+  .spaces-hero-photo::after,.activity-grid button::after {
+    content:""; position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
+    transition:opacity .35s var(--ease);
+  }
+  .spaces-hero-photo::after {
+    background:radial-gradient(ellipse at calc(var(--pointer-x,.5) * 100%) calc(var(--pointer-y,.5) * 100%),#ffdd9f3b,transparent 39%);
+    mix-blend-mode:screen;
+  }
+  .activity-grid button::after {
+    z-index:-1;
+    background:radial-gradient(ellipse at calc(var(--pointer-x,.5) * 100%) calc(var(--pointer-y,.5) * 100%),#c9d5b486,transparent 78%);
+  }
+  .spaces-hero:hover .spaces-hero-photo::after,.activity-grid button:hover::after { opacity:1; }
   .activity-grid button:hover { translate:0 -3px; box-shadow:0 9px 21px -13px #24312680; }
   .activity-grid button:hover .activity-icon { rotate:-8deg; }
   .space-button:hover:not(:disabled),.space-icon:hover:not(:disabled) { translate:0 -1px; }

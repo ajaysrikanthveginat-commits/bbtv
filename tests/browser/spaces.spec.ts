@@ -33,7 +33,13 @@ test("lounge typography and motion work at this screen size", async ({page}, inf
     const hero = page.locator(".spaces-hero");
     await hero.hover({position:{x:185,y:118}});
     await expect.poll(() => hero.evaluate(element =>
-      element.style.getPropertyValue("--lounge-x"))).not.toBe("");
+      element.style.getPropertyValue("--pointer-x"))).not.toBe("");
+    const study = page.getByRole("button", {name:/^Study/});
+    await study.hover();
+    await expect.poll(() => study.evaluate(element =>
+      element.style.getPropertyValue("--pointer-x"))).not.toBe("");
+    await expect.poll(() => hero.evaluate(element =>
+      element.style.getPropertyValue("--pointer-x"))).toBe("");
   }
   await page.emulateMedia({reducedMotion:"reduce"});
   await expect(page.locator(".hero-line > span")).toHaveCSS("animation-name", "none");

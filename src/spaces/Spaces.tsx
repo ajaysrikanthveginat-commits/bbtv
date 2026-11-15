@@ -18,17 +18,17 @@ const savedRooms = (): SavedRoom[] => {
 };
 const getInvite = () => new URLSearchParams(location.search).get("space") || "";
 
-function moveLounge(event: PointerEvent<HTMLElement>) {
+function trackPointer(event: PointerEvent<HTMLElement>) {
   if (event.pointerType !== "mouse" || !matchMedia("(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)").matches) return;
-  const hero = event.currentTarget;
-  const bounds = hero.getBoundingClientRect();
-  hero.style.setProperty("--lounge-x", `${((event.clientX - bounds.left) / bounds.width - .5) * 20}px`);
-  hero.style.setProperty("--lounge-y", `${((event.clientY - bounds.top) / bounds.height - .5) * 14}px`);
+  const target = event.currentTarget;
+  const bounds = target.getBoundingClientRect();
+  target.style.setProperty("--pointer-x", ((event.clientX - bounds.left) / bounds.width).toFixed(3));
+  target.style.setProperty("--pointer-y", ((event.clientY - bounds.top) / bounds.height).toFixed(3));
 }
 
-function resetLounge(event: PointerEvent<HTMLElement>) {
-  event.currentTarget.style.removeProperty("--lounge-x");
-  event.currentTarget.style.removeProperty("--lounge-y");
+function resetPointer(event: PointerEvent<HTMLElement>) {
+  event.currentTarget.style.removeProperty("--pointer-x");
+  event.currentTarget.style.removeProperty("--pointer-y");
 }
 
 function Player({ stream, muted = false, label, audioOnly = false }: {
@@ -129,7 +129,7 @@ export default function Spaces() {
       <a href="/" className="spaces-classic">Classic watch party <ArrowDownRight size={15}/></a>
     </header>
     <main className="spaces-home-main">
-      <section className="spaces-hero" onPointerMove={moveLounge} onPointerLeave={resetLounge}>
+      <section className="spaces-hero" onPointerMove={trackPointer} onPointerLeave={resetPointer}>
         <div className="spaces-hero-photo" aria-hidden="true"><img src="/spaces-lounge.webp" width={1320} height={880} alt="" fetchPriority="high"/></div>
         <div className="spaces-hero-copy">
           <span className="spaces-overline">BBTV SPACES</span>
@@ -145,7 +145,7 @@ export default function Spaces() {
         <div className="spaces-activities">
           <h2>{invite ? "Your invitation" : "What are you here to do?"}</h2>
           {invite ? <p>Use the same invitation next time to return to this room and its saved notes.</p> : <div className="activity-grid" role="group" aria-label="Room activity">
-            {modes.map(key => { const activity = activities[key]; const Icon = activity.icon; return <button key={key} aria-pressed={mode === key} onClick={() => setMode(key)}>
+            {modes.map(key => { const activity = activities[key]; const Icon = activity.icon; return <button key={key} aria-pressed={mode === key} onPointerMove={trackPointer} onPointerLeave={resetPointer} onClick={() => setMode(key)}>
               <span className="activity-icon"><Icon size={19}/></span><span><strong>{activity.title}</strong><small>{activity.detail}</small></span>
             </button>; })}
           </div>}
