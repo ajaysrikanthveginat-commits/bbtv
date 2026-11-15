@@ -1,0 +1,234 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { ArrowDownRight, ArrowLeft, ArrowRight, AudioLines, BookOpen, Check, CircleHelp, Clapperboard, Copy, DoorOpen, Hand, Heart, LayoutGrid, Mic, MicOff, Monitor, Plus, Send, Video, VideoOff, StickyNote, X } from "lucide-react";
+import { capacity, modes, type Member, type Mode, type NoteKind } from "./protocol";
+import { readLocal, useRoom, writeLocal } from "./useRoom";
+import { Screen, stamp } from "./Screen";
+import "./spaces.css";
+
+const activities = {
+  study: { title: "Study", detail: "Work through questions together", icon: BookOpen, board: "Study board", description: "Save questions and explanations for your next session." },
+  meet: { title: "Meet", detail: "Talk, present, and record decisions", icon: LayoutGrid, board: "Meeting notes", description: "Keep decisions and follow-ups where the team can find them." },
+  family: { title: "Catch up", detail: "Make time for the people you miss", icon: Heart, board: "Room notes", description: "Leave a note or a plan for the next catch-up." },
+  watch: { title: "Watch", detail: "Press play on the same screen", icon: Clapperboard, board: "Shared moments", description: "Pin scenes while you watch and jump back to them together." },
+};
+type SavedRoom = { id: string; name: string; mode: Mode };
+const savedRooms = (): SavedRoom[] => {
+  try { const rooms = JSON.parse(readLocal("bbtv.spaces")); return Array.isArray(rooms) ? rooms : []; } catch { return []; }
+};
+const getInvite = () => new URLSearchParams(location.search).get("space") || "";
+
+function Player({ stream, muted = false, label, audioOnly = false }: {
+  stream?: MediaStream; muted?: boolean; label?: string; audioOnly?: boolean;
+}) {
+  const element = useRef<HTMLMediaElement | null>(null);
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    const target = element.current;
+    if (!target || !stream) return;
+    let active = true;
+    target.srcObject = stream;
+    void target.play().then(() => { if (active) setBlocked(false); }).catch(() => { if (active && !muted) setBlocked(true); });
+    return () => { active = false; target.srcObject = null; };
+  }, [stream, muted, audioOnly]);
+  return <>
+    {audioOnly ? <audio ref={node => { element.current = node; }} autoPlay/> : <video ref={node => { element.current = node; }} autoPlay muted={muted} playsInline aria-label={label}/>}
+    {blocked && stream && <button className="space-button resume-audio" onClick={() => { void element.current?.play().then(() => setBlocked(false)).catch(() => {}); }}>Enable room audio</button>}
+  </>;
+}
+
+function Tile({ member, stream, own }: { member: Member; stream?: MediaStream; own: boolean }) {
+  return <div className={`space-tile ${member.hand ? "hand-raised" : ""} ${member.video && stream ? "tile-live" : ""}`}>
+    <div className="space-avatar" aria-hidden="true">{member.name.slice(0,1).toUpperCase()}</div>
+    {(member.video || member.audio) && stream && <Player stream={stream} muted={own} audioOnly={!member.video} label={`${member.name} camera`}/>}
+    <div className="tile-caption"><span>{member.name}{own && <small> · You</small>}</span>{member.hand ? <Hand size={16} aria-label="Hand raised"/> : member.audio ? <Mic size={15} aria-label="Mic on"/> : <MicOff size={15} aria-label="Mic off"/>}</div>
+  </div>;
+}
+
+export default function Spaces() {
+  const r = useRoom();
+  const [invite, setInvite] = useState(getInvite);
+  const [name, setName] = useState(() => readLocal("bbtv.name"));
+  const [title, setTitle] = useState("");
+  const [mode, setMode] = useState<Mode>("study");
+  const [joinURL, setJoinURL] = useState("");
+  const [saved, setSaved] = useState(savedRooms);
+  const [panel, setPanel] = useState<"board" | "chat">("board");
+  const [note, setNote] = useState("");
+  const [kind, setKind] = useState<NoteKind>("note");
+  const [chat, setChat] = useState("");
+  const [copy, setCopy] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const shareDialog = useRef<HTMLDialogElement>(null);
+  const chatEnd = useRef<HTMLDivElement>(null);
+  const ownStream = useMemo(() => r.local.camera ? new MediaStream([r.local.camera]) : undefined, [r.local.camera]);
+  const ownScreen = useMemo(() => r.local.screen ? new MediaStream([r.local.screen]) : undefined, [r.local.screen]);
+  const space = r.space;
+  const own = space?.members.find(m => m.id === r.id);
+  const host = space?.host === r.id;
+  const current = activities[space?.mode ?? mode];
+  const inviteURL = space ? `${location.origin}/spaces?space=${space.id}` : "";
+  const presenter = space?.members.find(m => m.id === space.presenter);
+  useEffect(() => {
+    if (!space) return;
+    const recent = [{ id: space.id, name: space.name, mode: space.mode }, ...savedRooms().filter(room => room.id !== space.id)].slice(0, 6);
+    writeLocal("bbtv.spaces", JSON.stringify(recent));
+    setSaved(recent);
+  }, [space?.id, space?.mode, space?.name]);
+  useEffect(() => { if (panel === "chat") chatEnd.current?.parentElement?.scrollTo({ top: chatEnd.current.parentElement.scrollHeight }); }, [space?.chat.length, panel]);
+
+  function pickInvite(value: string) {
+    const text = value.trim();
+    if (/^[a-f0-9]{24}$/i.test(text)) return text.toLowerCase();
+    try {
+      const url = new URL(text, location.origin);
+      const candidate = url.searchParams.get("space") || "";
+      if (url.origin === location.origin && /^[a-f0-9]{24}$/i.test(candidate)) return candidate.toLowerCase();
+    } catch { /* report through the form */ }
+    return "";
+  }
+  function openSaved(id: string) {
+    if (name.trim()) r.begin({ type: "join", room: id, name, ownerKey: readLocal("bbtv.owner." + id) });
+    else { setInvite(id); document.getElementById("space-name")?.focus(); }
+  }
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (invite) {
+      r.begin({ type: "join", room: invite, name, ownerKey: readLocal("bbtv.owner." + invite) });
+    } else {
+      r.begin({ type: "create", title, name, mode });
+    }
+  }
+  async function copyInvite() {
+    try { await navigator.clipboard.writeText(inviteURL); setCopy(true); }
+    catch { setCopy(false); shareDialog.current?.querySelector("input")?.select(); }
+  }
+  function leave() {
+    shareDialog.current?.close();
+    history.replaceState({}, "", "/spaces");
+    setInvite(""); setPanel("board"); setFocus(false); setNote(""); setChat("");
+    r.leave();
+  }
+
+  if (!space) return <div className="spaces-home">
+    <header className="spaces-nav">
+      <a href="/spaces" className="spaces-brand" aria-label="BBTV Spaces home"><span>bb</span>tv<i>.</i></a>
+      <a href="/" className="spaces-classic">Classic watch party <ArrowDownRight size={15}/></a>
+    </header>
+    <main className="spaces-home-main">
+      <section className="spaces-hero">
+        <div className="spaces-hero-copy">
+          <span className="spaces-overline">BBTV SPACES</span>
+          <h1>{invite ? <>You have <em>a seat.</em></> : <>A place to<br/><em>show up.</em></>}</h1>
+          <p>{invite ? "Join with your name. Your camera and mic start off." : "One room for your group, from the first conversation to whatever you do together next."}</p>
+          <a href="#space-setup" className="spaces-hero-action">{invite ? "Join the room" : "Open a room"} <ArrowRight size={18}/></a>
+        </div>
+        <div className="spaces-hero-photo" aria-hidden="true" />
+      </section>
+      <section className="spaces-booking" id="space-setup">
+        <div className="spaces-activities">
+          <h2>{invite ? "Your invitation" : "What are you here to do?"}</h2>
+          {invite ? <p>Use the same invitation next time to return to this room and its saved notes.</p> : <div className="activity-grid" role="group" aria-label="Room activity">
+            {modes.map(key => { const activity = activities[key]; const Icon = activity.icon; return <button key={key} aria-pressed={mode === key} onClick={() => setMode(key)}>
+              <Icon size={19}/><span><strong>{activity.title}</strong><small>{activity.detail}</small></span>
+            </button>; })}
+          </div>}
+        </div>
+        <form className="space-entry" onSubmit={submit}>
+          <label htmlFor="space-name">Your name</label><input id="space-name" required value={name} onChange={event => setName(event.target.value)} maxLength={32} placeholder="e.g. Alex" autoComplete="given-name"/>
+          {!invite && <><label htmlFor="space-title">Room name</label><input id="space-title" required value={title} onChange={event => setTitle(event.target.value)} maxLength={64} placeholder="e.g. Friday study group"/></>}
+          <button className="space-button solid" disabled={r.joining || !name.trim() || (!invite && !title.trim())}>{r.joining ? "Opening…" : invite ? "Join room" : "Create room"}<ArrowRight size={17}/></button>
+          {r.error && <p role="alert" className="space-error">{r.error}</p>}
+          {invite && <button type="button" className="space-text-button" onClick={() => { setInvite(""); r.leave(); history.replaceState({}, "", "/spaces"); }}>Create your own room instead</button>}
+        </form>
+      </section>
+      <div className="spaces-return">
+        <div><h2>Return to a room</h2>{saved.length === 0 && <p>Rooms you open on this device appear here.</p>}{saved.length > 0 && <ul>{saved.map(room => <li key={room.id}><button onClick={() => openSaved(room.id)} disabled={r.joining}><span>{room.name}</span><small>{activities[room.mode]?.title || "Open room"}</small><ArrowRight size={17}/></button></li>)}</ul>}</div>
+        <form onSubmit={event => { event.preventDefault(); const id = pickInvite(joinURL); if (id) { r.setError(""); setInvite(id); document.getElementById("space-name")?.focus(); } else r.setError("Paste an invitation link from this BBTV site."); }}>
+          <label htmlFor="space-invite-url">Have an invite link?</label>
+          <div><input id="space-invite-url" value={joinURL} onChange={event => setJoinURL(event.target.value)} required placeholder="Paste the room link"/><button className="space-button" aria-label="Use invite"><ArrowRight size={18}/></button></div>
+        </form>
+      </div>
+    </main>
+  </div>;
+
+  return <div className={`spaces-live activity-${space.mode}${focus ? " focus-stage" : ""}`}>
+    <header className="room-nav">
+      <button className="space-icon" onClick={leave} aria-label="Back to rooms"><ArrowLeft size={20}/></button>
+      <div><strong>{space.name}</strong><span><i className={r.online ? "online" : ""}/>{r.online ? `${space.members.length} of ${capacity} seats` : "Reconnecting…"}</span></div>
+      <button className="space-button invite-action" onClick={() => { setCopy(false); shareDialog.current?.showModal(); }}><Copy size={15}/> Invite</button>
+    </header>
+    <main className="room-workspace">
+      <div className="room-main">
+        <div className="stage-heading">
+          <div><span className="spaces-overline">CURRENT ACTIVITY</span><h1>{presenter ? "Presentation" : current.title}</h1></div>
+          <label className="activity-picker"><span>Activity</span>
+            <select aria-label="Room activity" value={space.mode} disabled={!host || !r.online} onChange={event => r.send({ type: "mode", mode: event.target.value as Mode })}>
+              {modes.map(key => <option key={key} value={key}>{activities[key].title}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className="media-stage" key={presenter ? "present" : space.mode}>
+          {presenter && <div className="room-presentation">
+            <Player stream={presenter.id === r.id ? ownScreen : r.remote[presenter.id]?.screen} muted label={`Screen shared by ${presenter.name}`}/>
+            <span>{presenter.name} is sharing</span>
+          </div>}
+          {!presenter && space.mode === "watch" && <Screen watch={space.watch} id={r.id} host={space.host} count={space.members.length} offset={r.offset} online={r.online} act={action => r.send({ type: "watch", action })}/>}
+          <div className={`space-seats ${presenter || space.mode === "watch" ? "seat-strip" : ""}`} aria-label="People in the room">
+            {space.members.map(member => <Tile key={member.id} member={member} own={member.id === r.id} stream={member.id === r.id ? ownStream : r.remote[member.id]?.call}/>)}
+            {space.members.length < capacity && !(presenter || space.mode === "watch") && <button className="space-tile empty-seat" onClick={() => { setCopy(false); shareDialog.current?.showModal(); }}><Plus size={23}/> Invite to an open seat</button>}
+          </div>
+        </div>
+        <nav className="space-dock" aria-label="Call controls">
+          <button className="space-button" aria-pressed={!!r.local.audio} disabled={!r.online} onClick={() => void r.toggle("audio")}>{r.local.audio ? <Mic size={17}/> : <MicOff size={17}/>}<span>Mic</span></button>
+          <button className="space-button" aria-pressed={!!r.local.camera} disabled={!r.online} onClick={() => void r.toggle("camera")}>{r.local.camera ? <Video size={17}/> : <VideoOff size={17}/>}<span>Camera</span></button>
+          <button className="space-button" aria-pressed={!!r.local.screen} disabled={!r.online || (!!presenter && presenter.id !== r.id)} onClick={() => void r.toggle("screen")}><Monitor size={17}/><span>Share</span></button>
+          <button className="space-button" aria-pressed={!!own?.hand} disabled={!r.online} onClick={() => r.send({ type: "hand", value: !own?.hand })}><Hand size={17}/><span>Hand</span></button>
+          <button className="space-button focus-toggle" aria-pressed={focus} onClick={() => setFocus(!focus)}><LayoutGrid size={17}/><span>{focus ? "Show board" : "Focus"}</span></button>
+          <button className="space-button leave-room" onClick={leave}><DoorOpen size={17}/><span>Leave</span></button>
+        </nav>
+        {r.error && <div className="space-error room-error" role="alert">{r.error}<button className="space-icon" aria-label="Dismiss notice" onClick={() => r.setError("")}><X size={17}/></button></div>}
+      </div>
+      <aside className="space-board">
+        <div className="board-tabs" role="group" aria-label="Room tools">
+          <button aria-pressed={panel === "board"} onClick={() => setPanel("board")}><StickyNote size={16}/> Board</button>
+          <button aria-pressed={panel === "chat"} onClick={() => setPanel("chat")}><AudioLines size={17}/> Chat</button>
+        </div>
+        {panel === "board" ? <>
+          <div className="board-title"><h2>{current.board}</h2><p>{current.description}</p></div>
+          <form className="note-form" onSubmit={event => { event.preventDefault(); if (note.trim() && r.send({ type: "note", text: note, kind, pin: space.mode === "watch" && !!space.watch.url })) setNote(""); }}>
+            <label className="sr-only" htmlFor="board-note">Write to the room board</label>
+            <textarea id="board-note" maxLength={500} required value={note} onChange={event => setNote(event.target.value)} placeholder={space.mode === "watch" ? "Name a scene or leave a note…" : "What should the group remember?"}/>
+            <div><select aria-label="Note type" value={kind} onChange={event => setKind(event.target.value as NoteKind)}><option value="note">Note</option><option value="question">Question</option><option value="decision">Decision</option></select>
+              <button className="space-button solid" disabled={!r.online || !note.trim()}><Plus size={16}/> {space.mode === "watch" && space.watch.url ? "Pin moment" : "Save to room"}</button></div>
+          </form>
+          <ol className="board-items">
+            {space.notes.length === 0 && <li className="board-empty"><CircleHelp size={18}/><span>Notes stay here when everyone leaves.</span></li>}
+            {[...space.notes].reverse().map(item => <li key={item.id} data-done={item.done}>
+              <div className="board-item-meta"><span>{item.kind} · {item.author}</span>{item.done && <Check size={15} aria-label="Resolved"/>}</div>
+              <p>{item.text}</p>
+              <div className="board-item-actions">
+                {item.position !== undefined && item.source === space.watch.url && space.mode === "watch" && <button className="space-text-button" disabled={!r.online || !!presenter || (!host && !space.watch.allowControl)} onClick={() => r.send({ type: "watch", action: { kind: "seek", position: item.position! } })}>Jump to {stamp(item.position)}</button>}
+                {host && item.kind === "question" && <button className="space-text-button" disabled={!r.online} onClick={() => r.send({ type: "resolve", id: item.id })}>{item.done ? "Reopen" : "Mark resolved"}</button>}
+              </div>
+            </li>)}
+          </ol>
+        </> : <>
+          <div className="board-title"><h2>Conversation</h2><p>Chat stays with this live session.</p></div>
+          <div className="space-chat-list" aria-label="Room messages">{space.chat.map(message => <div key={message.id}><strong>{message.name}</strong><p>{message.text}</p></div>)}<div ref={chatEnd}/></div>
+          <form className="space-chat-form" onSubmit={event => { event.preventDefault(); if (chat.trim() && r.send({type:"chat",text:chat})) setChat(""); }}>
+            <input aria-label="Message the room" placeholder="Message the room" maxLength={600} required value={chat} onChange={event => setChat(event.target.value)}/>
+            <button className="space-icon" aria-label="Send message" disabled={!r.online || !chat.trim()}><Send size={18}/></button>
+          </form>
+        </>}
+      </aside>
+    </main>
+    <dialog ref={shareDialog} className="space-invite" aria-labelledby="space-invite-heading">
+      <button className="space-icon invite-close" aria-label="Close invite" onClick={() => shareDialog.current?.close()}><X size={19}/></button>
+      <span className="spaces-overline">ROOM INVITATION</span><h2 id="space-invite-heading">Pull up a seat.</h2>
+      <p>Anyone with this link can join the room and read its board. Keep this link within your group.</p>{!r.persistent && <p className="space-pilot-note">Pilot rooms may reset when the site restarts.</p>}
+      <label>Room invite link<input readOnly value={inviteURL} onFocus={event => event.target.select()}/></label>
+      <button className="space-button solid" onClick={() => void copyInvite()}>{copy ? <Check size={17}/> : <Copy size={17}/>} {copy ? "Copied" : "Copy invite link"}</button>
+    </dialog>
+  </div>;
+}

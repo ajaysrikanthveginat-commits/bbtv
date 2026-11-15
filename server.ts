@@ -4,6 +4,7 @@ import path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer as createViteServer } from 'vite';
 import crypto from 'crypto';
+import { roomSockets } from './src/spaces/server';
 import { newWatchState, changeWatch, watchPosition, type WatchState } from './src/shared/watch';
 
 interface RoomData {
@@ -41,7 +42,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'bbtv',
-    version: 'salon-8',
+    version: 'spaces-9',
     activeRooms: rooms.size,
 
     timestamp: new Date().toISOString(),
@@ -65,7 +66,22 @@ app.get('/api/rooms/:roomId', (req, res) => {
 });
 
 // Setup WebSocket server on the same HTTP server at path /ws
-const wss = new WebSocketServer({ server: httpServer, path: '/ws', maxPayload: 64 * 1024 });
+const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
+const spaces = roomSockets();
+httpServer.on('upgrade', (request, socket, head) => {
+  const target = request.url?.split('?')[0];
+  const selected = target === '/spaces-ws' ? spaces : target === '/ws' ? wss : undefined;
+  if (!selected) {
+    if (process.env.NODE_ENV === 'production') socket.destroy();
+    return;
+  }
+  if (target === '/spaces-ws' && request.headers.origin) {
+    try {
+      if (new URL(request.headers.origin).host !== request.headers.host) { socket.destroy(); return; }
+    } catch { socket.destroy(); return; }
+  }
+  selected.handleUpgrade(request, socket, head, (ws) => selected.emit('connection', ws, request));
+});
 
 function generateRoomId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
