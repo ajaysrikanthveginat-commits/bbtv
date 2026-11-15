@@ -17,6 +17,40 @@ async function camera(page: Page, name: string) {
   return page.getByLabel(name + " camera", {exact:true}).evaluate((element: HTMLVideoElement) => element.videoWidth);
 }
 
+test("lounge typography and motion work at this screen size", async ({page}, info) => {
+  await page.emulateMedia({reducedMotion:"no-preference"});
+  await page.goto("/spaces");
+  const photo = page.locator(".spaces-hero-photo img");
+  await expect.poll(() => photo.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBe(1320);
+  const fonts = await page.evaluate(async () => {
+    const display = await document.fonts.load('660 56px "Bricolage Grotesque"');
+    const italic = await document.fonts.load('italic 500 56px "Cormorant Garamond"');
+    return [display.length, italic.length];
+  });
+  expect(fonts).toEqual([1, 1]);
+  await expect(page.locator(".hero-line > span")).toHaveCSS("animation-name", "hero-type-in");
+  if (info.project.name === "desktop") {
+    const hero = page.locator(".spaces-hero");
+    await hero.hover({position:{x:185,y:118}});
+    await expect.poll(() => hero.evaluate(element =>
+      element.style.getPropertyValue("--pointer-x"))).not.toBe("");
+    const study = page.getByRole("button", {name:/^Study/});
+    await study.hover();
+    await expect.poll(() => study.evaluate(element =>
+      element.style.getPropertyValue("--pointer-x"))).not.toBe("");
+    await expect.poll(() => hero.evaluate(element =>
+      element.style.getPropertyValue("--pointer-x"))).toBe("");
+  }
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await expect(page.locator(".hero-line > span")).toHaveCSS("animation-name", "none");
+  await expect(photo).toHaveCSS("transform", "none");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
+  await page.screenshot({path:info.outputPath("spaces-lounge.png"),fullPage:true});
+  await page.getByRole("link", {name:"Open a room"}).click();
+  await expect(page).toHaveURL(/#space-setup$/);
+  await expect(page.getByRole("button", {name:/^Study/})).toBeInViewport();
+});
+
 test("four people can join, use cameras, and change activities without leaving", async ({page, browser}, info) => {
   await page.addInitScript(() => {
     navigator.mediaDevices.getDisplayMedia = async () => {

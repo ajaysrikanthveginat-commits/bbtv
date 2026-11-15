@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, PointerEvent } from "react";
 import { ArrowDownRight, ArrowLeft, ArrowRight, AudioLines, BookOpen, Check, CircleHelp, Clapperboard, Copy, DoorOpen, Hand, Heart, LayoutGrid, Mic, MicOff, Monitor, Plus, Send, Video, VideoOff, StickyNote, X } from "lucide-react";
 import { capacity, modes, type Member, type Mode, type NoteKind } from "./protocol";
 import { readLocal, useRoom, writeLocal } from "./useRoom";
@@ -17,6 +17,19 @@ const savedRooms = (): SavedRoom[] => {
   try { const rooms = JSON.parse(readLocal("bbtv.spaces")); return Array.isArray(rooms) ? rooms : []; } catch { return []; }
 };
 const getInvite = () => new URLSearchParams(location.search).get("space") || "";
+
+function trackPointer(event: PointerEvent<HTMLElement>) {
+  if (event.pointerType !== "mouse" || !matchMedia("(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)").matches) return;
+  const target = event.currentTarget;
+  const bounds = target.getBoundingClientRect();
+  target.style.setProperty("--pointer-x", ((event.clientX - bounds.left) / bounds.width).toFixed(3));
+  target.style.setProperty("--pointer-y", ((event.clientY - bounds.top) / bounds.height).toFixed(3));
+}
+
+function resetPointer(event: PointerEvent<HTMLElement>) {
+  event.currentTarget.style.removeProperty("--pointer-x");
+  event.currentTarget.style.removeProperty("--pointer-y");
+}
 
 function Player({ stream, muted = false, label, audioOnly = false }: {
   stream?: MediaStream; muted?: boolean; label?: string; audioOnly?: boolean;
@@ -112,25 +125,28 @@ export default function Spaces() {
 
   if (!space) return <div className="spaces-home">
     <header className="spaces-nav">
-      <a href="/spaces" className="spaces-brand" aria-label="BBTV Spaces home"><span>bb</span>tv<i>.</i></a>
+      <a href="/spaces" className="spaces-brand" aria-label="BBTV Spaces home">bbtv<i>.</i></a>
       <a href="/" className="spaces-classic">Classic watch party <ArrowDownRight size={15}/></a>
     </header>
     <main className="spaces-home-main">
-      <section className="spaces-hero">
+      <section className="spaces-hero" onPointerMove={trackPointer} onPointerLeave={resetPointer}>
+        <div className="spaces-hero-photo" aria-hidden="true"><img src="/spaces-lounge.webp" width={1320} height={880} alt="" fetchPriority="high"/></div>
         <div className="spaces-hero-copy">
           <span className="spaces-overline">BBTV SPACES</span>
-          <h1>{invite ? <>You have <em>a seat.</em></> : <>A place to<br/><em>show up.</em></>}</h1>
+          <h1 key={invite ? "invite" : "home"} aria-label={invite ? "You have a seat." : "A place to show up."}>
+            <span className="hero-line"><span>{invite ? "You have" : "A place to"}</span></span>
+            <span className="hero-line hero-line-serif"><em>{invite ? "a seat." : "show up."}</em></span>
+          </h1>
           <p>{invite ? "Join with your name. Your camera and mic start off." : "One room for your group, from the first conversation to whatever you do together next."}</p>
           <a href="#space-setup" className="spaces-hero-action">{invite ? "Join the room" : "Open a room"} <ArrowRight size={18}/></a>
         </div>
-        <div className="spaces-hero-photo" aria-hidden="true" />
       </section>
-      <section className="spaces-booking" id="space-setup">
+      <section className="spaces-booking" id="space-setup" tabIndex={-1}>
         <div className="spaces-activities">
           <h2>{invite ? "Your invitation" : "What are you here to do?"}</h2>
           {invite ? <p>Use the same invitation next time to return to this room and its saved notes.</p> : <div className="activity-grid" role="group" aria-label="Room activity">
-            {modes.map(key => { const activity = activities[key]; const Icon = activity.icon; return <button key={key} aria-pressed={mode === key} onClick={() => setMode(key)}>
-              <Icon size={19}/><span><strong>{activity.title}</strong><small>{activity.detail}</small></span>
+            {modes.map(key => { const activity = activities[key]; const Icon = activity.icon; return <button key={key} aria-pressed={mode === key} onPointerMove={trackPointer} onPointerLeave={resetPointer} onClick={() => setMode(key)}>
+              <span className="activity-icon"><Icon size={19}/></span><span><strong>{activity.title}</strong><small>{activity.detail}</small></span>
             </button>; })}
           </div>}
         </div>
@@ -161,14 +177,14 @@ export default function Spaces() {
     <main className="room-workspace">
       <div className="room-main">
         <div className="stage-heading">
-          <div><span className="spaces-overline">CURRENT ACTIVITY</span><h1>{presenter ? "Presentation" : current.title}</h1></div>
+          <div><span className="spaces-overline">CURRENT ACTIVITY</span><h1 key={presenter ? "presentation" : space.mode}>{presenter ? "Presentation" : current.title}</h1></div>
           <label className="activity-picker"><span>Activity</span>
             <select aria-label="Room activity" value={space.mode} disabled={!host || !r.online} onChange={event => r.send({ type: "mode", mode: event.target.value as Mode })}>
               {modes.map(key => <option key={key} value={key}>{activities[key].title}</option>)}
             </select>
           </label>
         </div>
-        <div className="media-stage" key={presenter ? "present" : space.mode}>
+        <div className="media-stage">
           {presenter && <div className="room-presentation">
             <Player stream={presenter.id === r.id ? ownScreen : r.remote[presenter.id]?.screen} muted label={`Screen shared by ${presenter.name}`}/>
             <span>{presenter.name} is sharing</span>
@@ -195,7 +211,7 @@ export default function Spaces() {
           <button aria-pressed={panel === "chat"} onClick={() => setPanel("chat")}><AudioLines size={17}/> Chat</button>
         </div>
         {panel === "board" ? <>
-          <div className="board-title"><h2>{current.board}</h2><p>{current.description}</p></div>
+          <div className="board-title" key={space.mode}><h2>{current.board}</h2><p>{current.description}</p></div>
           <form className="note-form" onSubmit={event => { event.preventDefault(); if (note.trim() && r.send({ type: "note", text: note, kind, pin: space.mode === "watch" && !!space.watch.url })) setNote(""); }}>
             <label className="sr-only" htmlFor="board-note">Write to the room board</label>
             <textarea id="board-note" maxLength={500} required value={note} onChange={event => setNote(event.target.value)} placeholder={space.mode === "watch" ? "Name a scene or leave a note…" : "What should the group remember?"}/>
