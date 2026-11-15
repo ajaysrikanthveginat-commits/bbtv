@@ -100,8 +100,9 @@ export function useRoom() {
           case "clock": setOffset(message.now - (message.at + Date.now()) / 2); break;
           case "error":
             setError(message.message);
-            if (!joined && requested === entry) {
+            if (!joined && (message.action === "join" || message.action === "create")) {
               initialError = true;
+              setSpace(null);
               setEntry(null);
             } else if (message.action === "present" && present.current) {
               present.current = false;

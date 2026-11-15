@@ -187,7 +187,13 @@ export function roomSockets() {
             save(room, { ...current, watch: changeWatch(current.watch, action.action, actor.id, host(room), [...room.clients.values()].map(member => member.id), now) });
             break;
           case "rtc": {
-            if (!action.signal || typeof action.to !== "string" || action.to === actor.id) return;
+            if (!action.signal || typeof action.signal !== "object" || typeof action.to !== "string" || action.to === actor.id) return;
+            const signal = action.signal;
+            if ("sdp" in signal) {
+              if (!signal.sdp || !["offer", "answer"].includes(signal.sdp.type) || typeof signal.sdp.sdp !== "string" || signal.sdp.sdp.length > 24_000) return;
+            } else if ("candidate" in signal) {
+              if (!signal.candidate || typeof signal.candidate.candidate !== "string" || signal.candidate.candidate.length > 2048) return;
+            } else if (!("retry" in signal) || signal.retry !== true) return;
             const target = [...room.clients].find(([, member]) => member.id === action.to)?.[0];
             if (target) send(target, { type: "rtc", from: actor.id, signal: action.signal });
             return;
