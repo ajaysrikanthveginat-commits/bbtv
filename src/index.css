@@ -1164,3 +1164,76 @@ button:disabled {
 .cut-timeline > input { width:100%; min-width:0; }
 .cut-timeline-marks { pointer-events:none; position:absolute; inset:0 8px; }
 .cut-timeline-marks i { display:block; position:absolute; top:50%; width:4px; height:7px; translate:-50% calc(-50% + 7px); background:var(--coral); border-radius:1px; }
+
+/* BBTV Screening Room */
+.salon-home {
+  --ink:#231a17;
+  --paper:#f2e9da;
+  --wine:#572d36;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100dvh;
+  font-family:"DM Sans",system-ui,sans-serif;
+}
+.salon-home main,.salon-nav { max-width:1550px; margin-inline:auto; padding-inline:clamp(22px,6vw,92px); }
+.salon-nav { display:flex; justify-content:space-between; align-items:center; min-height:74px; }
+.salon-nav button { display:flex; gap:8px; align-items:center; font-size:13px; color:#5c4a42; min-height:44px; }
+.salon-wordmark { color:var(--ink); font:400 42px/.8 "Instrument Serif",Georgia,serif; text-decoration:none; letter-spacing:-.055em; }
+.salon-wordmark span { color:#974955; }
+.salon-hero { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); align-items:center; gap:clamp(25px,5vw,80px); border-top:1px solid #b5a397; padding-block:26px; }
+.salon-intro { animation:salon-arrive .65s both; }
+.salon-intro h1 { font:400 clamp(70px,9.8vw,151px)/.76 "Instrument Serif",Georgia,serif; letter-spacing:-.04em; }
+.salon-intro h1 em { color:var(--wine); }
+.salon-intro p { width:min(100%,302px); font-size:16px; line-height:1.65; color:#54423b; margin:26px 0 9px; }
+.salon-preview { display:flex; gap:9px; align-items:center; font-size:14px; min-height:44px; border-bottom:1px solid #8b6b65; }
+.salon-preview:hover { color:#8e3f4e; }
+.salon-art { overflow:hidden; background:#403128; margin:0; }
+.salon-art img { display:block; width:100%; height:clamp(275px,34vw,520px); object-fit:cover; object-position:center 58%; animation:salon-project .9s ease-out both; }
+@keyframes salon-arrive { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+@keyframes salon-project { from { opacity:.7; transform:scale(1.035); } to { opacity:1; transform:none; } }
+.salon-booking { border-top:1px solid #b5a397; padding:10px 0 26px; }
+.salon-booking-modes { display:flex; gap:24px; margin-bottom:12px; }
+.salon-booking-modes button { color:#5c4a42; min-height:42px; border-bottom:2px solid transparent; font-size:14px; }
+.salon-booking-modes button[aria-pressed=true] { color:var(--wine); font-weight:700; border-color:var(--wine); }
+.salon-booking form { display:grid; grid-template-columns:1fr 1fr auto; align-items:end; gap:14px; }
+.salon-booking label { display:grid; min-width:0; gap:6px; font-size:12px; font-weight:700; }
+.salon-booking input { background:#fbf5eb; color:var(--ink); min-width:0; height:49px; border:1px solid #ab9588; border-radius:2px; padding:0 12px; font-size:16px; }
+.salon-booking > p { font-size:13px; margin-top:10px; color:var(--wine); }
+.salon-submit { display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:49px; padding:0 18px; background:var(--wine); color:#fff6e8; font-weight:700; transition:background .2s, transform .2s; }
+.salon-submit:hover:not(:disabled) { background:#733f48; transform:translateY(-1px); }
+.salon-submit:disabled { opacity:.63; }
+.salon-preview-dialog video { width:100%; margin-top:12px; }
+.salon-room { --coral:#e6c290; --night:#151212; --paper:#f9efdf; --rule:#b49c7437; padding-bottom:94px; }
+.salon-room .night-room-header,.salon-room .night-dock { background:#201919; }
+.salon-room .night-room-title h1,.salon-room .watch-heading h2 { font:400 clamp(25px,4vw,42px)/.95 "Instrument Serif",Georgia,serif; }
+.salon-room .cinema-workspace { max-width:1350px; }
+.salon-room .cinema-layout { grid-template-columns:minmax(0,1fr); }
+.salon-room .watch-player,.salon-room .call-tile { background:#211b1a; border-radius:3px; }
+.salon-room .night-control:not(.active):not(.danger) { background:#302625; color:#f9eddf; border-color:#624d42; }
+.salon-room .watch-canvas:has(.watch-empty) { background:linear-gradient(#19100c26,#120c0dba),center 56%/cover url("/screening-salon.webp"); }
+.salon-room .watch-canvas { background-color:#0b0909; }
+.salon-room .ambient-on .watch-canvas { box-shadow:0 0 42px #e6c29025; }
+.salon-room .watch-lobby,.salon-room .cut-panels,.salon-room .watch-source,.salon-room .queue-body input,.salon-room .queue-body li,.salon-room .cut-moments input { background:#231c1a; }
+.salon-room .watch-status,.salon-room .call-viewport { background:#312424; color:#f5dfbf; border-color:#6b5449; }
+.salon-room .call-grid { grid-template-columns:repeat(2,minmax(0,220px)); }
+.salon-room .participant-section { width:min(100%,460px); }
+.salon-room .cinema-companion .room-sidebar {
+  position:fixed; z-index:34; top:auto; bottom:83px; right:12px; width:min(400px,calc(100vw - 24px));
+  height:min(530px,66dvh); border:1px solid #866b54; border-radius:14px; animation:salon-arrive .24s both;
+}
+.salon-drawer-heading { display:flex; align-items:center; justify-content:space-between; padding:5px 13px 5px 16px; }
+.salon-drawer-heading h2 { font:400 29px "Instrument Serif",Georgia,serif; }
+.salon-drawer-heading button { display:grid; place-items:center; width:44px; height:44px; }
+@media(min-width:1024px) {
+  .salon-room .night-dock { position:fixed; top:auto; bottom:14px; left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 24px); border:1px solid var(--rule); border-radius:14px; }
+}
+@media(max-width:720px) {
+  .salon-nav { min-height:58px; }
+  .salon-hero { grid-template-columns:minmax(0,1fr); gap:18px; padding-block:20px; }
+  .salon-intro h1 { font-size:clamp(65px,17vw,110px); }
+  .salon-intro p { margin:16px 0 2px; font-size:14px; line-height:1.5; }
+  .salon-art img { height:clamp(140px,44vw,260px); }
+  .salon-booking form { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .salon-submit { grid-column:1/-1; }
+  .salon-room .cinema-companion .room-sidebar { bottom:76px; }
+}

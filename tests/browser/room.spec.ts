@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('entry, invitation, two-person chat, cinema mode, and session recovery', async ({page,browser}, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('The shared');
+  await expect(page.getByRole('heading',{level:1})).toContainText('A night');
   await page.getByRole('button', {name: 'Play the preview'}).click();
   await expect(page.getByRole('dialog', {name: 'BBTV preview'})).toBeVisible();
   await expect.poll(() => page.locator("dialog[aria-label='BBTV preview'] video").evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0);
@@ -24,11 +24,16 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await guest.getByLabel('Your name').fill('Sam');
   await guest.getByRole('button',{name:'Join movie night'}).click();
   await expect(guest.getByRole('heading',{name:'Friday favorites'})).toBeVisible();
+  await expect(page.locator('aside')).toHaveCount(0);
+  for (const viewer of [page, guest]) {
+    await viewer.getByRole('navigation', {name:'Room controls'}).getByRole('button', {name:'Chat',exact:true}).click();
+  }
   await page.getByLabel('Message your room').fill('Popcorn is ready!');
   await page.getByRole('button',{name:'Send message',exact:true}).click();
   await expect(guest.getByText('Popcorn is ready!',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Send ❤️ reaction'}).click();
   await expect(guest.locator('.stage-reaction')).toHaveText('❤️');
+  for (const viewer of [page, guest]) await viewer.getByRole('button', {name:'Close conversation'}).click();
   await guest.getByRole('button', {name: /^Up next/}).click();
   await guest.getByLabel('Video title').fill('Next feature');
   await guest.getByLabel('Video URL').fill('https://media.example.test/feature.mp4');
@@ -51,7 +56,7 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
   await page.locator('.cinema-toggle').click();
   await expect(page.locator('aside')).toBeHidden();
   await page.locator('.cinema-toggle').click();
-  await expect(page.locator('aside')).toBeVisible();
+  await expect(page.locator('aside')).toBeHidden();
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   // The guest enables video first. The host must see it without sharing a camera.
   await guest.getByRole('button',{name:'Enable call',exact:true}).click();
