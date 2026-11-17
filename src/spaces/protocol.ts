@@ -4,6 +4,19 @@ export const modes = ["study", "meet", "family", "watch"] as const;
 export type Mode = typeof modes[number];
 export const capacity = 4;
 export type NoteKind = "note" | "question" | "decision";
+export type InkPoint = [number, number];
+export const inkColors = ["#243f34", "#ba4b37", "#386ca0", "#936bb0", "erase"] as const;
+export interface InkStroke {
+  id: string;
+  author: string;
+  color: string;
+  width: number;
+  points: InkPoint[];
+}
+export interface Drawing {
+  revision: number;
+  strokes: InkStroke[];
+}
 
 export interface Member {
   id: string;
@@ -40,6 +53,8 @@ export interface Space {
   host: string;
   presenter: string;
   chat: Chat[];
+  drawing: Drawing;
+  ink: InkStroke[];
 }
 
 export type MediaSignal =
@@ -53,6 +68,9 @@ export type RoomRequest =
   | { type: "mode"; mode: Mode }
   | { type: "note"; text: string; kind: NoteKind; pin: boolean }
   | { type: "resolve"; id: string }
+  | { type: "draw"; revision: number; stroke: string; phase: "start" | "move" | "end"; points: InkPoint[]; color?: string; width?: number }
+  | { type: "draw-undo" }
+  | { type: "draw-clear"; revision: number }
   | { type: "hand"; value: boolean }
   | { type: "devices"; audio: boolean; video: boolean }
   | { type: "present"; value: boolean }
@@ -64,6 +82,7 @@ export type RoomRequest =
 export type RoomEvent =
   | { type: "joined"; id: string; room: string; ownerKey?: string; iceServers: RTCIceServer[]; persistent: boolean }
   | { type: "state"; space: Space; now: number }
+  | { type: "ink"; revision: number; stroke: InkStroke; finished: boolean }
   | { type: "error"; message: string; action?: string }
   | { type: "rtc"; from: string; signal: MediaSignal }
   | { type: "clock"; at: number; now: number };
