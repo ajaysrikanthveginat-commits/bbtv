@@ -4,10 +4,10 @@ import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { WebSocket, WebSocketServer } from "ws";
 import { changeWatch, newWatchState, watchPosition } from "../shared/watch";
-import { capacity, modes, type Chat, type Member, type Note, type RoomEvent, type RoomRequest, type Space } from "./protocol";
+import { capacity, inkColors, modes, type Chat, type InkPoint, type InkStroke, type Member, type Note, type RoomEvent, type RoomRequest, type Space } from "./protocol";
 
-type Saved = Pick<Space, "id" | "name" | "mode" | "notes" | "watch">;
-type Live = { space: Saved; clients: Map<WebSocket, Member>; presenter: string; chat: Chat[] };
+type Saved = Pick<Space, "id" | "name" | "mode" | "notes" | "watch" | "drawing">;
+type Live = { space: Saved; clients: Map<WebSocket, Member>; presenter: string; chat: Chat[]; ink: Map<string, InkStroke> };
 const hash = (key: string) => createHash("sha256").update(key).digest("hex");
 const code = /^[a-f0-9]{24}$/;
 const trim = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -38,7 +38,7 @@ export function roomSockets() {
   function broadcast(room: Live) {
     const event: RoomEvent = {
       type: "state", now: Date.now(),
-      space: { ...room.space, members: [...room.clients.values()], host: host(room), presenter: room.presenter, chat: room.chat },
+      space: { ...room.space, members: [...room.clients.values()], host: host(room), presenter: room.presenter, chat: room.chat, ink: [...room.ink.values()] },
     };
     room.clients.forEach((_, ws) => send(ws, event));
   }
@@ -47,6 +47,17 @@ export function roomSockets() {
     const stable = { ...next, watch: { ...watch, position: watchPosition(watch, Date.now()), playing: false, ready: [], breakUntil: undefined } };
     write.run(JSON.stringify(stable), next.id);
     room.space = next;
+  }
+  function publishInk(room: Live, stroke: InkStroke, finished: boolean) {
+    const event: RoomEvent = { type: "ink", revision: room.space.drawing.revision, stroke, finished };
+    room.clients.forEach((_, ws) => send(ws, event));
+  }
+  function finishInk(room: Live, actor: string) {
+    const stroke = room.ink.get(actor);
+    if (!stroke) return;
+    save(room, { ...room.space, drawing: { ...room.space.drawing, strokes: [...room.space.drawing.strokes, stroke] } });
+    room.ink.delete(actor);
+    publishInk(room, stroke, true);
   }
   function resetPlayback(room: Live) {
     const watch = room.space.watch;
@@ -78,7 +89,7 @@ export function roomSockets() {
       if (!room || !actor) return;
       room.clients.delete(ws);
       if (room.presenter === actor.id) room.presenter = "";
-      try { resetPlayback(room); } catch (error) { console.error("Failed to save paused room", error); }
+      try { finishInk(room, actor.id); resetPlayback(room); } catch (error) { room.ink.delete(actor.id); console.error("Failed to save paused room", error); }
       if (room.clients.size) broadcast(room);
       else live.delete(room.space.id);
     });
@@ -112,7 +123,7 @@ export function roomSockets() {
             budgets.set(address, budget);
             id = randomBytes(12).toString("hex");
             ownerKey = randomBytes(24).toString("hex");
-            const space: Saved = { id, name: title, mode: action.mode, notes: [], watch: newWatchState(true) };
+            const space: Saved = { id, name: title, mode: action.mode, notes: [], watch: newWatchState(true), drawing: { revision: 0, strokes: [] } };
             create.run(id, hash(ownerKey), JSON.stringify(space));
           } else {
             id = trim(action.room, 30).toLowerCase();
@@ -120,7 +131,9 @@ export function roomSockets() {
           }
           const stored = load.get(id) as { owner: string; document: string } | undefined;
           if (!stored) throw new Error("That room couldn’t be found. Check the invite link.");
-          const target = live.get(id) || { space: JSON.parse(stored.document) as Saved, clients: new Map(), presenter: "", chat: [] };
+          const saved = JSON.parse(stored.document) as Saved;
+          saved.drawing ??= { revision: 0, strokes: [] };
+          const target: Live = live.get(id) || { space: saved, clients: new Map(), presenter: "", chat: [], ink: new Map() };
           if (target.clients.size >= capacity) throw new Error("All four seats are taken. Try again when someone leaves.");
           const candidate = ownerKey || (action.type === "join" ? trim(action.ownerKey, 52) : "");
           const owner = !!candidate && hash(candidate) === stored.owner && ![...target.clients.values()].some(member => member.owner);
@@ -141,7 +154,50 @@ export function roomSockets() {
             requireHost();
             if (!modes.includes(action.mode)) return;
             if (current.mode === action.mode) return;
-            save(room, { ...current, mode: action.mode, watch: { ...current.watch, position: watchPosition(current.watch, now), playing: false, ready: [], revision: current.watch.revision + 1 } });
+            for (const author of room.ink.keys()) finishInk(room, author);
+            save(room, { ...room.space, mode: action.mode, watch: { ...current.watch, position: watchPosition(current.watch, now), playing: false, ready: [], revision: current.watch.revision + 1 } });
+            break;
+          case "draw": {
+            if (action.revision !== current.drawing.revision) return;
+            if (!["study", "meet"].includes(current.mode)) return;
+            if (typeof action.stroke !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(action.stroke)) return;
+            if (!["start", "move", "end"].includes(action.phase)) return;
+            if (!Array.isArray(action.points) || action.points.length > 64 || action.points.some(p =>
+              !Array.isArray(p) || p.length !== 2 || !p.every(Number.isFinite) || p[0] < 0 || p[0] > 1600 || p[1] < 0 || p[1] > 1000
+            )) throw new Error("That drawing update couldn’t be used.");
+            const points: InkPoint[] = action.points.map(p => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]);
+            const drafts = [...room.ink.values()];
+            if (action.phase === "start") {
+              if (room.ink.has(actor.id) || current.drawing.strokes.some(s => s.id === action.stroke) || drafts.some(s => s.id === action.stroke)) return;
+              if (current.drawing.strokes.length + drafts.length >= 300) throw new Error("This board is full. Undo a stroke or ask the host to clear it.");
+              if (!points.length || !inkColors.includes(action.color as typeof inkColors[number]) || ![3, 6, 12, 32].includes(action.width!)) return;
+            }
+            const previous = room.ink.get(actor.id);
+            if (action.phase !== "start" && previous?.id !== action.stroke) return;
+            const used = [...current.drawing.strokes, ...drafts].reduce((total, stroke) => total + stroke.points.length, 0);
+            if (used + points.length > 20_000 || (previous?.points.length || 0) + points.length > 1024) {
+              finishInk(room, actor.id);
+              throw new Error("That stroke reached the board limit. Lift the pen, then continue or clear the board.");
+            }
+            const stroke: InkStroke = action.phase === "start"
+              ? { id: action.stroke, author: actor.id, color: action.color!, width: action.width!, points }
+              : { ...previous!, points: [...previous!.points, ...points] };
+            room.ink.set(actor.id, stroke);
+            if (action.phase === "end") finishInk(room, actor.id);
+            else publishInk(room, { ...stroke, points }, false);
+            return;
+          }
+          case "draw-undo": {
+            const index = current.drawing.strokes.map(stroke => stroke.author).lastIndexOf(actor.id);
+            if (index < 0) return;
+            save(room, { ...current, drawing: { ...current.drawing, strokes: current.drawing.strokes.filter((_, i) => i !== index) } });
+            break;
+          }
+          case "draw-clear":
+            requireHost();
+            if (action.revision !== current.drawing.revision) return;
+            save(room, { ...current, drawing: { revision: current.drawing.revision + 1, strokes: [] } });
+            room.ink.clear();
             break;
           case "note": {
             const text = trim(action.text, 500);
@@ -205,6 +261,7 @@ export function roomSockets() {
         const message = error instanceof Error && !(error instanceof SyntaxError) && !("code" in error) && !(error instanceof TypeError)
           ? error.message : "BBTV couldn’t complete that update.";
         send(ws, { type: "error", message, action: actionType });
+        if (room && actionType === "draw") broadcast(room);
       }
     });
   });

@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowLeft, ArrowRight, AudioLines, BookOpen, Check, Cir
 import { capacity, modes, type Member, type Mode, type NoteKind } from "./protocol";
 import { readLocal, useRoom, writeLocal } from "./useRoom";
 import { Screen, stamp } from "./Screen";
+import { Whiteboard } from "./Whiteboard";
 import "./spaces.css";
 
 const activities = {
@@ -72,6 +73,7 @@ export default function Spaces() {
   const [chat, setChat] = useState("");
   const [copy, setCopy] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [showDrawing, setShowDrawing] = useState(true);
   const shareDialog = useRef<HTMLDialogElement>(null);
   const chatEnd = useRef<HTMLDivElement>(null);
   const ownStream = useMemo(() => r.local.camera ? new MediaStream([r.local.camera]) : undefined, [r.local.camera]);
@@ -82,6 +84,8 @@ export default function Spaces() {
   const current = activities[space?.mode ?? mode];
   const inviteURL = space ? `${location.origin}/spaces?space=${space.id}` : "";
   const presenter = space?.members.find(m => m.id === space.presenter);
+  const canDraw = space?.mode === "study" || space?.mode === "meet";
+  const drawingVisible = canDraw && showDrawing && !presenter;
   useEffect(() => {
     if (!space) return;
     const recent = [{ id: space.id, name: space.name, mode: space.mode }, ...savedRooms().filter(room => room.id !== space.id)].slice(0, 6);
@@ -184,15 +188,20 @@ export default function Spaces() {
             </select>
           </label>
         </div>
+        {canDraw && !presenter && <div className="whiteboard-switch" role="group" aria-label="Room stage">
+          <button aria-pressed={showDrawing} onClick={() => setShowDrawing(true)}>Whiteboard</button>
+          <button aria-pressed={!showDrawing} onClick={() => setShowDrawing(false)}>Cameras</button>
+        </div>}
         <div className="media-stage">
+          {drawingVisible && <Whiteboard drawing={space.drawing} ink={space.ink} id={r.id} host={host} online={r.online} error={r.error} send={r.send}/>}
           {presenter && <div className="room-presentation">
             <Player stream={presenter.id === r.id ? ownScreen : r.remote[presenter.id]?.screen} muted label={`Screen shared by ${presenter.name}`}/>
             <span>{presenter.name} is sharing</span>
           </div>}
           {!presenter && space.mode === "watch" && <Screen watch={space.watch} id={r.id} host={space.host} count={space.members.length} offset={r.offset} online={r.online} act={action => r.send({ type: "watch", action })}/>}
-          <div className={`space-seats ${presenter || space.mode === "watch" ? "seat-strip" : ""}`} aria-label="People in the room">
+          <div className={`space-seats ${presenter || space.mode === "watch" || drawingVisible ? "seat-strip" : ""}`} aria-label="People in the room">
             {space.members.map(member => <Tile key={member.id} member={member} own={member.id === r.id} stream={member.id === r.id ? ownStream : r.remote[member.id]?.call}/>)}
-            {space.members.length < capacity && !(presenter || space.mode === "watch") && <button className="space-tile empty-seat" onClick={() => { setCopy(false); shareDialog.current?.showModal(); }}><Plus size={23}/> Invite to an open seat</button>}
+            {space.members.length < capacity && !(presenter || space.mode === "watch" || drawingVisible) && <button className="space-tile empty-seat" onClick={() => { setCopy(false); shareDialog.current?.showModal(); }}><Plus size={23}/> Invite to an open seat</button>}
           </div>
         </div>
         <nav className="space-dock" aria-label="Call controls">

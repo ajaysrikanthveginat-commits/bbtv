@@ -17,6 +17,65 @@ async function camera(page: Page, name: string) {
   return page.getByLabel(name + " camera", {exact:true}).evaluate((element: HTMLVideoElement) => element.videoWidth);
 }
 
+test("handwriting streams live, erases, undoes, and returns with the room", async ({page,browser},info) => {
+  await page.goto("/spaces");
+  await page.getByLabel("Your name").fill("Alex");
+  await page.getByLabel("Room name").fill("Writing together");
+  await page.getByRole("button",{name:"Create room",exact:true}).click();
+  const link = await invite(page);
+  const context = await browser.newContext();
+  try {
+    const guest = await context.newPage();
+    await join(guest,link,"Sam");
+    const paper = page.getByRole("img",{name:"Drawing surface",exact:true});
+    await paper.scrollIntoViewIfNeeded();
+    const bounds = (await paper.boundingBox())!;
+    const x = bounds.x + bounds.width * .2;
+    const y = bounds.y + bounds.height * .35;
+    if (info.project.name === "mobile") {
+      const touch = await page.context().newCDPSession(page);
+      await touch.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[{x,y}]});
+      for (let step=1;step<=12;step++) await touch.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[{x:x+step*5,y:y+Math.sin(step)*10}]});
+      await expect.poll(() => guest.locator("[data-stroke]").first().getAttribute("d")).toContain("L");
+      await touch.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
+      await touch.detach();
+    } else {
+      await page.mouse.move(x,y);
+      await page.mouse.down();
+      await page.mouse.move(x+110,y+55,{steps:15});
+      await expect.poll(() => guest.locator("[data-stroke]").first().getAttribute("d")).toContain("L");
+      await page.mouse.up();
+    }
+    await expect(page.getByRole("button",{name:"Undo your last stroke"})).toBeEnabled();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await page.screenshot({path:info.outputPath("spaces-handwriting.png"),fullPage:true,animations:"disabled"});
+    await page.getByRole("button",{name:"Eraser",exact:true}).click();
+    await page.mouse.move(x+20,y);
+    await page.mouse.down();
+    await page.mouse.move(x+50,y+20,{steps:6});
+    await page.mouse.up();
+    await expect(guest.locator('path[stroke="#fffef9"]')).toHaveCount(1);
+    await page.getByRole("button",{name:"Undo your last stroke"}).click();
+    await expect(guest.locator('path[stroke="#fffef9"]')).toHaveCount(0);
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByRole("button",{name:"Cameras",exact:true}).click();
+    await expect(paper).toHaveCount(0);
+    await page.getByRole("button",{name:"Whiteboard",exact:true}).click();
+    await expect(page.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByLabel("Room activity").selectOption("meet");
+    await expect(guest.getByRole("heading",{name:"Meeting notes"})).toBeVisible();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await guest.getByRole("button",{name:"Leave",exact:true}).click();
+    await page.getByRole("button",{name:"Leave",exact:true}).click();
+    await page.getByRole("button",{name:/Writing together/}).click();
+    await expect(page.locator("[data-stroke]")).toHaveCount(1);
+    page.once("dialog",dialog=>dialog.accept());
+    await page.getByRole("button",{name:"Clear whiteboard"}).click();
+    await expect(page.locator("[data-stroke]")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  } finally { await context.close(); }
+});
+
 test("lounge typography and motion work at this screen size", async ({page}, info) => {
   await page.emulateMedia({reducedMotion:"no-preference"});
   await page.goto("/spaces");

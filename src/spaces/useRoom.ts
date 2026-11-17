@@ -96,6 +96,22 @@ export function useRoom() {
             setSpace(message.space);
             media.current?.sync(message.space.members);
             break;
+          case "ink":
+            setSpace(current => {
+              if (!current || message.revision !== current.drawing.revision) return current;
+              const stroke = message.stroke;
+              if (message.finished) return {
+                ...current,
+                drawing: { ...current.drawing, strokes: [...current.drawing.strokes.filter(item => item.id !== stroke.id), stroke] },
+                ink: current.ink.filter(item => item.id !== stroke.id),
+              };
+              const previous = current.ink.find(item => item.id === stroke.id);
+              return { ...current, ink: [
+                ...current.ink.filter(item => item.id !== stroke.id),
+                { ...stroke, points: [...(previous?.points || []), ...stroke.points] },
+              ] };
+            });
+            break;
           case "rtc": media.current?.receive(message.from, message.signal); break;
           case "clock": setOffset(message.now - (message.at + Date.now()) / 2); break;
           case "error":
