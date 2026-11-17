@@ -22,7 +22,7 @@
 .spaces-home button:not(:disabled),.spaces-live button:not(:disabled) { cursor:pointer; }
 .spaces-nav,.spaces-home-main { max-width:1530px; margin:auto; padding-inline:clamp(16px,4.7vw,72px); }
 .spaces-nav { min-height:77px; display:flex; justify-content:space-between; align-items:center; }
-.spaces-brand { font:800 38px/.9 var(--type); letter-spacing:-.09em; color:var(--green); padding-right:.1em; }
+.spaces-brand { font:800 38px/.9 var(--type); letter-spacing:-.065em; color:var(--green); padding-right:.1em; }
 .spaces-brand i { color:#aa6b34; font-style:normal; }
 .spaces-classic { display:flex; align-items:center; gap:6px; min-height:44px; font-size:13px; color:var(--soft); }
 .spaces-classic:hover,.space-text-button:hover { color:var(--ink); text-decoration:underline; }

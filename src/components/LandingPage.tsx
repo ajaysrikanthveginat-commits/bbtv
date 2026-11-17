@@ -35,7 +35,7 @@ export function LandingPage(p: LandingPageProps) {
   return (
     <div className="salon-home">
       <header className="salon-nav">
-        <a href="/" className="salon-wordmark" aria-label="BBTV home">bbtv<span>.</span></a>
+        <a href="/" className="salon-wordmark" aria-label="BBTV home">BBTV<span>.</span></a>
         <div className="flex gap-4"><a className="text-sm self-center" href="/spaces">Try BBTV Spaces</a><button type="button" onClick={p.onToggleDiagnostics}>Connection help <ArrowUpRight size={14} /></button></div>
       </header>
       <main>

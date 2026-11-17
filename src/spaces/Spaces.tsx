@@ -125,7 +125,7 @@ export default function Spaces() {
 
   if (!space) return <div className="spaces-home">
     <header className="spaces-nav">
-      <a href="/spaces" className="spaces-brand" aria-label="BBTV Spaces home">bbtv<i>.</i></a>
+      <a href="/spaces" className="spaces-brand" aria-label="BBTV Spaces home">BBTV<i>.</i></a>
       <a href="/" className="spaces-classic">Classic watch party <ArrowDownRight size={15}/></a>
     </header>
     <main className="spaces-home-main">
