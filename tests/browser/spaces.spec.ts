@@ -17,6 +17,127 @@ async function camera(page: Page, name: string) {
   return page.getByLabel(name + " camera", {exact:true}).evaluate((element: HTMLVideoElement) => element.videoWidth);
 }
 
+async function drawLine(page:Page) {
+  const paper=page.getByRole("img",{name:"Drawing surface",exact:true});
+  await paper.scrollIntoViewIfNeeded();
+  const box=(await paper.boundingBox())!;
+  await page.mouse.move(box.x+box.width*.25,box.y+box.height*.3);
+  await page.mouse.down();
+  await page.mouse.move(box.x+box.width*.6,box.y+box.height*.55,{steps:14});
+  await page.mouse.up();
+}
+
+test("device checks, pages, recovery, and returning room cards work together",async({page,browser},info)=>{
+  await page.goto("/");
+  await page.getByRole("button",{name:"Check camera & microphone"}).click();
+  await expect(page.getByRole("dialog",{name:"Check your devices"})).toBeVisible();
+  await page.getByRole("button",{name:"Test camera",exact:true}).click();
+  await expect.poll(()=>page.getByLabel("Camera preview",{exact:true}).evaluate((video:HTMLVideoElement)=>video.videoWidth)).toBeGreaterThan(0);
+  await page.getByRole("button",{name:"Test microphone",exact:true}).click();
+  await expect(page.getByLabel("Microphone level")).toBeVisible();
+  await expect(page.getByText(/Devices are ready/)).toBeVisible();
+  await page.getByRole("button",{name:"Done",exact:true}).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByLabel("Your name").fill("Alex");
+  await page.getByLabel("Room name").fill("Daily study");
+  await page.getByRole("button",{name:"Create room",exact:true}).click();
+  const link=await invite(page);
+  const context=await browser.newContext();
+  try {
+    const guest=await context.newPage();await join(guest,link,"Sam");
+    await drawLine(page);
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await expect(page.getByText("Saved to room",{exact:true})).toBeVisible();
+    await page.getByRole("button",{name:"Undo your last stroke",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(0);
+    await page.getByRole("button",{name:"Redo your last stroke",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    const paper=page.getByRole("img",{name:"Drawing surface",exact:true});
+    await page.getByRole("button",{name:"Zoom in",exact:true}).click();
+    await expect(page.getByRole("button",{name:"Reset whiteboard zoom",exact:true})).toHaveText("125%");
+    const before=await paper.getAttribute("viewBox");
+    await page.getByRole("button",{name:"Pan whiteboard",exact:true}).click();
+    await drawLine(page);
+    expect(await paper.getAttribute("viewBox")).not.toBe(before);
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByRole("button",{name:"Reset whiteboard zoom",exact:true}).click();
+    await page.getByRole("button",{name:"Pen",exact:true}).click();
+    await page.getByRole("button",{name:"Add whiteboard page",exact:true}).click();
+    await expect(guest.getByRole("button",{name:"Page 2",exact:true})).toHaveAttribute("aria-pressed","true");
+    await expect(guest.locator("[data-stroke]")).toHaveCount(0);
+    await drawLine(page);
+    await page.getByRole("button",{name:"Page 1",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByRole("button",{name:"Pin a question",exact:true}).click();
+    await paper.click({position:{x:75,y:75}});
+    await expect(guest.locator(".board-question-pin")).toHaveCount(1);
+    await page.getByRole("button",{name:"Shared board pointer",exact:true}).click();
+    await paper.hover({position:{x:95,y:90}});
+    await expect(guest.locator("[data-pointer]")).toHaveCount(1);
+    await page.locator(".room-backup-panel summary").click();
+    await expect(page.getByText("A recovery copy is saved on this device.")).toBeVisible();
+    const file=page.waitForEvent("download");
+    await page.getByRole("button",{name:"Download room backup",exact:true}).click();
+    const backup=await file;const path=info.outputPath("room-backup.json");await backup.saveAs(path);
+    page.once("dialog",dialog=>dialog.accept());
+    await page.getByRole("button",{name:"Clear whiteboard",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(0);
+    page.once("dialog",dialog=>dialog.accept());
+    await page.getByLabel("Room backup file").setInputFiles(path);
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await expect(page.getByRole("button",{name:"Page 2",exact:true})).toBeVisible();
+    await page.getByRole("button",{name:"Previous saved versions",exact:true}).click();
+    await expect(page.locator(".room-version-list button")).toHaveCount(3);
+    const socket=page.waitForEvent("websocket");
+    await page.getByRole("button",{name:"Reconnect call",exact:true}).click();
+    const connection=await socket;
+    await connection.waitForEvent("framereceived",event=>String(event.payload).includes('"type":"state"'));
+    await expect(page.getByText("2 of 4 seats")).toBeVisible();
+    await expect(page.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByRole("button",{name:"Undo your last stroke",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(0);
+    await page.getByRole("button",{name:"Redo your last stroke",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByRole("button",{name:"Leave",exact:true}).click();
+    await expect(page.locator(".recent-room-preview [data-stroke]")).toHaveCount(1);
+    await expect(page.getByText("1 in the room",{exact:true})).toBeVisible({timeout:15000});
+    await expect(page.locator(".recent-room-question")).toContainText("open question");
+    await page.screenshot({path:info.outputPath("returning-rooms.png"),fullPage:true,animations:"disabled"});
+    await page.getByRole("button",{name:"Restore a copy of Daily study",exact:true}).click();
+    await expect(page).not.toHaveURL(link);
+    await expect(page.getByRole("button",{name:"Page 2",exact:true})).toBeVisible();
+    await expect(page.locator("[data-stroke]")).toHaveCount(1);
+  } finally {await context.close();}
+});
+
+test("family avatars and meeting focus are shared without losing the board",async({page,browser},info)=>{
+  await page.goto("/");
+  await page.getByRole("button",{name:/^Family Make time/}).click();
+  await page.getByLabel("Your name").fill("Alex");
+  await page.getByLabel("Room name").fill("Personal lounge");
+  await page.getByRole("button",{name:"Create room",exact:true}).click();
+  const link=await invite(page),context=await browser.newContext();
+  try{
+    const guest=await context.newPage();await join(guest,link,"Sam");
+    await page.getByRole("button",{name:"My avatar",exact:true}).click();
+    await page.getByLabel("Avatar skin tone").selectOption("3");
+    await page.getByLabel("Avatar hair",{exact:true}).selectOption("1");
+    await page.getByLabel("Avatar background").selectOption("2");
+    await page.getByLabel("Glasses",{exact:true}).check();
+    await page.getByRole("button",{name:"Save avatar",exact:true}).click();
+    await expect(guest.locator(".space-avatar .personal-avatar")).toHaveCount(1);
+    await page.getByRole("button",{name:"Send my laugh",exact:true}).click();
+    await expect(guest.locator(".family-reaction .personal-avatar")).toHaveCount(1);
+    await page.screenshot({path:info.outputPath("personal-family.png"),fullPage:true,animations:"disabled"});
+    await page.getByLabel("Room activity").selectOption("meet");
+    await page.getByRole("button",{name:"Focus on Sam",exact:true}).click();
+    await expect(page.locator(".tile-focused")).toContainText("Sam");
+    await drawLine(page);
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
+    await page.screenshot({path:info.outputPath("daily-meeting.png"),fullPage:true,animations:"disabled"});
+  }finally{await context.close();}
+});
+
 test("the main address opens handwriting and each activity has its own room", async ({page,browser},info) => {
   await page.goto("/");
   await expect(page.getByRole("heading",{level:1})).toHaveText(/A place to\s*show up\./);
@@ -118,7 +239,7 @@ test("handwriting streams live, erases, undoes, and returns with the room", asyn
     await expect(guest.locator("[data-stroke]")).toHaveCount(1);
     await guest.getByRole("button",{name:"Leave",exact:true}).click();
     await page.getByRole("button",{name:"Leave",exact:true}).click();
-    await page.getByRole("button",{name:/Writing together/}).click();
+    await page.locator(".recent-room-open").filter({hasText:"Writing together"}).click();
     await expect(page.locator("[data-stroke]")).toHaveCount(1);
     page.once("dialog",dialog=>dialog.accept());
     await page.getByRole("button",{name:"Clear whiteboard"}).click();
@@ -207,6 +328,13 @@ test("four people can join, use cameras, and change activities without leaving",
     await page.getByRole("button", {name:"Share",exact:true}).click();
     await expect(sam.getByRole("heading", {name:"Presentation"})).toBeVisible();
     await expect.poll(() => sam.getByLabel("Screen shared by Alex").evaluate((video:HTMLVideoElement) => video.videoWidth),{timeout:12000}).toBeGreaterThan(0);
+    await page.getByRole("button",{name:"Shared presentation pointer",exact:true}).click();
+    await page.locator(".room-presentation").hover({position:{x:75,y:75}});
+    await expect(sam.locator(".presentation-pointers circle")).toHaveCount(1);
+    await page.getByRole("button",{name:"Focus presentation",exact:true}).click();
+    await expect(page.locator(".space-seats")).toBeHidden();
+    await page.getByRole("button",{name:"Focus presentation",exact:true}).click();
+    await expect(page.locator(".space-seats")).toBeVisible();
     await page.screenshot({path:info.outputPath("spaces-room.png"),fullPage:true,animations:"disabled"});
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally {
@@ -236,7 +364,7 @@ test("movie night syncs across browsers and returns to saved moments", async ({p
     await page.screenshot({path:info.outputPath("spaces-watch.png"),fullPage:true,animations:"disabled"});
     await guest.getByRole("button", {name:"Leave",exact:true}).click();
     await page.getByRole("button", {name:"Leave",exact:true}).click();
-    await page.getByRole("button", {name:/Friday Film/}).click();
+    await page.locator(".recent-room-open").filter({hasText:"Friday Film"}).click();
     await expect(page.getByText("The opening shot")).toBeVisible();
     await expect(page.getByLabel("Room activity")).toBeEnabled();
   } finally {

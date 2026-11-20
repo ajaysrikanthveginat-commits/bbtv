@@ -67,7 +67,7 @@ app.get('/api/rooms/:roomId', (req, res) => {
 
 // Setup WebSocket server on the same HTTP server at path /ws
 const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
-const spaces = roomSockets();
+const spaces = roomSockets(app);
 httpServer.on('upgrade', (request, socket, head) => {
   const target = request.url?.split('?')[0];
   const selected = target === '/spaces-ws' ? spaces : target === '/ws' ? wss : undefined;

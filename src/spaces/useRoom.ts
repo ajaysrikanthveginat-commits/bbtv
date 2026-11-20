@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RoomMedia } from "./mesh";
-import type { RoomEvent, RoomRequest, Space } from "./protocol";
+import type { AvatarProfile, RoomEvent, RoomPointer, RoomRequest, Space } from "./protocol";
+import { cacheRoom } from "./cache";
+import { validAvatar } from "./documents";
 
 type Entry = Extract<RoomRequest, { type: "create" | "join" }>;
 type Slot = "camera" | "audio" | "screen";
@@ -21,9 +23,16 @@ export function useRoom() {
   const [persistent, setPersistent] = useState(false);
   const [offset, setOffset] = useState(0);
   const [remote, setRemote] = useState<Record<string, Incoming>>({});
-  const [reactions, setReactions] = useState<{ id: string; emoji: string; name: string; at: number }[]>([]);
+  const [reactions, setReactions] = useState<{ id: string; emoji: string; name: string; avatar?:AvatarProfile; at: number }[]>([]);
+  const [pointers,setPointers]=useState<(RoomPointer & {at:number})[]>([]);
+  const [versionHistory,setHistory]=useState<{version:number;at:number}[]>([]);
+  const [saving,setSaving]=useState(false);
+  const [deviceBackup,setDeviceBackup]=useState(false);
   const [local, setLocal] = useState<Partial<Record<Slot, MediaStreamTrack>>>({});
   const socket = useRef<WebSocket | null>(null);
+  const pendingInk=useRef(new Set<string>());
+  const lastEntry=useRef<Entry|null>(null);
+  const boardRevision=useRef<number|undefined>(undefined);
   const media = useRef<RoomMedia | null>(null);
   const devices = useRef<Partial<Record<Slot, MediaStreamTrack>>>({});
   const busy = useRef(new Set<Slot>());
@@ -31,6 +40,9 @@ export function useRoom() {
   const fail = useCallback((message: string) => setError(message), []);
   const send = useCallback((action: RoomRequest) => {
     if (socket.current?.readyState !== WebSocket.OPEN) return false;
+    if(action.type==="draw"&&action.phase==="start"){pendingInk.current.add(action.stroke);setSaving(true);}
+    if(action.type==="profile"&&lastEntry.current)lastEntry.current={...lastEntry.current,avatar:action.avatar};
+    if(action.type==="history")setHistory([]);
     socket.current.send(JSON.stringify(action));
     return true;
   }, []);
@@ -47,7 +59,28 @@ export function useRoom() {
     present.current = false;
     setLocal({});
   }, []);
-  function begin(action: Entry) { setError(""); setEntry(action); }
+  function begin(action: Entry) {
+    setError("");
+    let avatar:AvatarProfile|undefined;
+    try { const value=JSON.parse(readLocal("bbtv.avatar"));if(validAvatar(value))avatar=value; } catch {}
+    const request={...action,avatar:action.avatar||avatar};
+    lastEntry.current=request;setEntry(request);
+  }
+  function reconnect() {
+    if(!lastEntry.current)return;
+    setError("");setEntry({...lastEntry.current});
+  }
+  useEffect(()=>{
+    if(!space)return;
+    let active=true;
+    void cacheRoom(space).then(()=>{if(active)setDeviceBackup(true);}).catch(()=>{if(active)setDeviceBackup(false);});
+    return ()=>{active=false;};
+  },[space?.id,space?.version]);
+  useEffect(()=>{
+    if(!pointers.length)return;
+    const timer=setTimeout(()=>setPointers(current=>current.filter(item=>Date.now()-item.at<1700)),1800);
+    return ()=>clearTimeout(timer);
+  },[pointers]);
 
   useEffect(() => {
     if (!reactions.length) return;
@@ -81,7 +114,9 @@ export function useRoom() {
             attempts = 0;
             joined = true;
             if (message.ownerKey) writeLocal("bbtv.owner." + message.room, message.ownerKey);
-            requested = { type: "join", room: message.room, name: requested.name, ownerKey: readLocal("bbtv.owner." + message.room) };
+            requested = { type: "join", room: message.room, name: requested.name, ownerKey: readLocal("bbtv.owner." + message.room),resumeKey:message.resumeKey };
+            requested.avatar = lastEntry.current?.avatar;
+            lastEntry.current=requested;
             writeLocal("bbtv.name", requested.name);
             history.replaceState({}, "", "/spaces?space=" + message.room);
             setId(message.id);
@@ -100,16 +135,21 @@ export function useRoom() {
             break;
           }
           case "state":
+            if(boardRevision.current!==undefined&&boardRevision.current!==message.space.drawing.revision){pendingInk.current.clear();setSaving(false);}
+            boardRevision.current=message.space.drawing.revision;
             setSpace(message.space);
             media.current?.sync(message.space.members);
             break;
           case "ink":
+            if(message.finished){pendingInk.current.delete(message.stroke.id);setSaving(pendingInk.current.size>0);}
             setSpace(current => {
               if (!current || message.revision !== current.drawing.revision) return current;
               const stroke = message.stroke;
               if (message.finished) return {
                 ...current,
                 drawing: { ...current.drawing, strokes: [...current.drawing.strokes.filter(item => item.id !== stroke.id), stroke] },
+                pages:current.pages.map(page=>page.id===current.page?{...page,strokes:[...current.drawing.strokes.filter(item=>item.id!==stroke.id),stroke]}:page),
+                version:message.version,updatedAt:message.updatedAt,redo:current.redo.filter(id=>id!==stroke.author),
                 ink: current.ink.filter(item => item.id !== stroke.id),
               };
               const previous = current.ink.find(item => item.id === stroke.id);
@@ -120,12 +160,15 @@ export function useRoom() {
             });
             break;
           case "rtc": media.current?.receive(message.from, message.signal); break;
+          case "pointer":setPointers(current=>[...current.filter(item=>item.id!==message.pointer.id),{...message.pointer,at:Date.now()}]);break;
+          case "history":setHistory(message.versions);break;
           case "reaction":
             setReactions(current => [...current.slice(-5), { ...message, at: Date.now() }]);
             break;
           case "clock": setOffset(message.now - (message.at + Date.now()) / 2); break;
           case "error":
             setError(message.message);
+            if(message.action==="draw"){pendingInk.current.clear();setSaving(false);}
             if (!joined && (message.action === "join" || message.action === "create")) {
               initialError = true;
               setSpace(null);
@@ -145,9 +188,10 @@ export function useRoom() {
         stopTracks();
         setOnline(false);
         setRemote({});
+        pendingInk.current.clear();setSaving(false);
         if (!initialError && attempts++ < 5) retry = setTimeout(connect, Math.min(8000, 800 * 2 ** attempts));
         else if (!initialError) {
-          setError("The connection is unavailable. Leave and rejoin to retry.");
+          setError("The connection is unavailable. Use Reconnect to try again.");
           if (requested === entry) setEntry(null);
         }
       };
@@ -178,6 +222,7 @@ export function useRoom() {
     setSpace(null);
     setId("");
     setError("");
+    setDeviceBackup(false);setHistory([]);setPointers([]);
   }
 
   async function toggle(slot: Slot) {
@@ -200,7 +245,9 @@ export function useRoom() {
     try {
       const stream = slot === "screen"
         ? await navigator.mediaDevices.getDisplayMedia({ video: { width: { max: 1280 }, height: { max: 720 }, frameRate: { max: 15 } }, audio: false })
-        : await navigator.mediaDevices.getUserMedia(slot === "camera" ? { video: { width: { ideal: 640, max: 960 }, frameRate: { max: 24 } }, audio: false } : { audio: true, video: false });
+        : await navigator.mediaDevices.getUserMedia(slot === "camera"
+          ? { video: {deviceId:readLocal("bbtv.camera")?{ideal:readLocal("bbtv.camera")}:undefined,width: { ideal: 640, max: 960 }, frameRate: { max: 24 } }, audio: false }
+          : { audio: {deviceId:readLocal("bbtv.microphone")?{ideal:readLocal("bbtv.microphone")}:undefined}, video: false });
       const track = stream.getTracks()[0];
       if (!track || activeSocket !== socket.current || activeSocket?.readyState !== WebSocket.OPEN) {
         stream.getTracks().forEach(item => item.stop());
@@ -231,5 +278,5 @@ export function useRoom() {
     }
   }
 
-  return { begin, leave, send, toggle, space, id, online, persistent, remote, local, offset, error, setError, reactions, joining: !!entry && !space };
+  return { begin, leave, send, toggle, reconnect, space, id, online, persistent, remote, local, offset, error, setError, reactions,pointers,history:versionHistory,saving,deviceBackup, joining: !!entry && !space };
 }

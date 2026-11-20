@@ -62,3 +62,13 @@ Use Node 24. Run `npm ci` and `npm run dev`, or `npm run build && npm start`. Ru
 For a durable deployment, set `BBTV_DATABASE` to an absolute SQLite file path on a persistent volume. The default `./data/spaces.sqlite` persists on the same filesystem, which may be replaced during a hosted deployment. The pilot runs as a single application instance. Configure `BBTV_TURN_URL`, `BBTV_TURN_USER`, and `BBTV_TURN_PASSWORD` on a trusted pilot deployment for networks that require relaying. Screen sharing sends video plus the existing microphone track, without capturing system audio.
 
 Keep the invite URL within the group. Its random ID is the capability required to read or join the room. The room owner's credential is separate and remains in their browser. The host can change activities and moderate questions. If the owner is away, the first connected participant coordinates the live session.
+
+## Daily room tools
+
+The optional device check previews the selected camera and measures microphone input before joining. The Reconnect control rejoins the same room with devices off. Saved work stays on the board while participants reconnect.
+
+Each room supports six shared handwritten pages, undo/redo, local zoom and pan, and shared pointers. Questions can be pinned to a page and resolved by the host. Meeting participants can focus a camera or enlarge the shared presentation. Family avatars are made from original configurable artwork and can be sent as expressions.
+
+The service commits room changes and the three preceding versions in a SQLite transaction. It also writes a consistent database backup under the database directory's `backups` subdirectory every 15 minutes, keeping seven daily files. Configure `BBTV_DATABASE=/var/data/spaces.sqlite` on an attached persistent Render disk so the database and its backups survive deployments. Files on an ephemeral filesystem can still be lost. A Render paid service and disk must be configured through the hosting account.
+
+Browsers keep an independent room recovery copy in IndexedDB. The returning-room cards show local board previews and poll presence for known invite IDs. Downloaded room backups contain pages and saved notes, without the owner's credential. Hosts can import a backup or restore one of the three preceding service versions. If a service room is gone, Restore a copy creates a new room and invitation from the device copy. Browser recovery depends on that device retaining its site data.
