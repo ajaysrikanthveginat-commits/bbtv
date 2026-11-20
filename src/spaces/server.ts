@@ -145,6 +145,7 @@ export function roomSockets(app?: Express) {
         const action = JSON.parse(String(raw)) as RoomRequest;
         if (!action || typeof action.type !== "string") return;
         actionType = action.type;
+        if(room&&actor&&!room.clients.has(ws))return;
         if (action.type === "clock" && typeof action.at === "number") {
           send(ws, { type: "clock", at: action.at, now });
           return;

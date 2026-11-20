@@ -137,7 +137,7 @@ export function Whiteboard({ drawing, ink, id, host, online, error, send, pages,
     finally { URL.revokeObjectURL(url); }
   }
   return <section ref={board} className="whiteboard" aria-label="Shared whiteboard">
-    <div className="whiteboard-heading"><span><PenLine size={15}/> Handwriting board</span><span role="status">{!online?"Offline":saving?"Saving…":"Saved to room"}</span></div>
+    <div className="whiteboard-heading"><span><PenLine size={15}/> Handwriting board</span><span role="status">{!online?"Offline":error?"Check room notice":saving?"Saving…":"Saved to room"}</span></div>
     <div className="whiteboard-pages" role="group" aria-label="Whiteboard pages">
       {pages.map(item=><button className="space-button" key={item.id} aria-pressed={item.id===page} disabled={!online} onClick={()=>send({type:"page",action:"select",id:item.id})}>{item.title}</button>)}
       <button className="space-icon" aria-label="Add whiteboard page" disabled={!online||pages.length>=6} onClick={()=>send({type:"page",action:"add"})}><Plus size={16}/></button>

@@ -19,7 +19,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:integration
-      - run: npx playwright install --with-deps chromium
+      - name: Prepare browser
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            printf 'PLAYWRIGHT_EXECUTABLE_PATH=%s\n' "$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4
         if: always()
