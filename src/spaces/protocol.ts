@@ -5,6 +5,8 @@ export type Mode = typeof modes[number];
 export const capacity = 4;
 export type NoteKind = "note" | "question" | "decision";
 export type InkPoint = [number, number];
+export type InkStyle = "pen" | "marker" | "calligraphy";
+export const roomReactions = ["❤️", "👏", "😂", "✨"] as const;
 export const inkColors = ["#243f34", "#ba4b37", "#386ca0", "#936bb0", "erase"] as const;
 export interface InkStroke {
   id: string;
@@ -12,6 +14,7 @@ export interface InkStroke {
   color: string;
   width: number;
   points: InkPoint[];
+  style?: InkStyle;
 }
 export interface Drawing {
   revision: number;
@@ -68,13 +71,14 @@ export type RoomRequest =
   | { type: "mode"; mode: Mode }
   | { type: "note"; text: string; kind: NoteKind; pin: boolean }
   | { type: "resolve"; id: string }
-  | { type: "draw"; revision: number; stroke: string; phase: "start" | "move" | "end"; points: InkPoint[]; color?: string; width?: number }
+  | { type: "draw"; revision: number; stroke: string; phase: "start" | "move" | "end"; points: InkPoint[]; color?: string; width?: number; style?: InkStyle }
   | { type: "draw-undo" }
   | { type: "draw-clear"; revision: number }
   | { type: "hand"; value: boolean }
   | { type: "devices"; audio: boolean; video: boolean }
   | { type: "present"; value: boolean }
   | { type: "chat"; text: string }
+  | { type: "reaction"; emoji: typeof roomReactions[number] }
   | { type: "watch"; action: WatchAction }
   | { type: "rtc"; to: string; signal: MediaSignal }
   | { type: "clock"; at: number };
@@ -83,6 +87,7 @@ export type RoomEvent =
   | { type: "joined"; id: string; room: string; ownerKey?: string; iceServers: RTCIceServer[]; persistent: boolean }
   | { type: "state"; space: Space; now: number }
   | { type: "ink"; revision: number; stroke: InkStroke; finished: boolean }
+  | { type: "reaction"; id: string; emoji: string; name: string }
   | { type: "error"; message: string; action?: string }
   | { type: "rtc"; from: string; signal: MediaSignal }
   | { type: "clock"; at: number; now: number };

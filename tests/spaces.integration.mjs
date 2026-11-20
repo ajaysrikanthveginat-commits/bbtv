@@ -81,7 +81,7 @@ try {
   const saved = (await written).space;
   assert.equal(saved.notes[0].author, "Sam");
   assert.equal(saved.members[0].owner, true);
-  const stroke = {type:"draw",revision:0,stroke:"first",phase:"start",points:[[100,100]],color:"#243f34",width:6};
+  const stroke = {type:"draw",revision:0,stroke:"first",phase:"start",points:[[100,100]],color:"#243f34",width:6,style:"calligraphy"};
   const beginning = receive(host, event => event.type === "ink" && event.stroke.id === "first");
   guest.ws.send(JSON.stringify(stroke));
   assert.equal((await beginning).finished, false);
@@ -109,6 +109,7 @@ try {
   assert.equal(reopened.space.members.length, 1);
   assert.equal(reopened.space.members[0].owner, true);
   assert.equal(reopened.space.drawing.strokes[0].points.length,3);
+  assert.equal(reopened.space.drawing.strokes[0].style,"calligraphy");
   const cleared = await perform(back,{type:"draw-clear",revision:0},event => event.type === "state" && event.space.drawing.revision === 1);
   assert.equal(cleared.space.drawing.strokes.length,0);
   back.send(JSON.stringify({...stroke,stroke:"stale"}));

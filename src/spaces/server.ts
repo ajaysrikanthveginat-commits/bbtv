@@ -4,7 +4,7 @@ import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { WebSocket, WebSocketServer } from "ws";
 import { changeWatch, newWatchState, watchPosition } from "../shared/watch";
-import { capacity, inkColors, modes, type Chat, type InkPoint, type InkStroke, type Member, type Note, type RoomEvent, type RoomRequest, type Space } from "./protocol";
+import { capacity, inkColors, modes, roomReactions, type Chat, type InkPoint, type InkStroke, type Member, type Note, type RoomEvent, type RoomRequest, type Space } from "./protocol";
 
 type Saved = Pick<Space, "id" | "name" | "mode" | "notes" | "watch" | "drawing">;
 type Live = { space: Saved; clients: Map<WebSocket, Member>; presenter: string; chat: Chat[]; ink: Map<string, InkStroke> };
@@ -82,6 +82,7 @@ export function roomSockets() {
     let room: Live | undefined;
     let actor: Member | undefined;
     let messages = 0;
+    let reactedAt = 0;
     let windowEnds = Date.now() + 1000;
     ws.on("pong", () => pinged.delete(ws));
     ws.on("error", () => ws.terminate());
@@ -171,6 +172,7 @@ export function roomSockets() {
               if (room.ink.has(actor.id) || current.drawing.strokes.some(s => s.id === action.stroke) || drafts.some(s => s.id === action.stroke)) return;
               if (current.drawing.strokes.length + drafts.length >= 300) throw new Error("This board is full. Undo a stroke or ask the host to clear it.");
               if (!points.length || !inkColors.includes(action.color as typeof inkColors[number]) || ![3, 6, 12, 32].includes(action.width!)) return;
+              if (action.style && !["pen", "marker", "calligraphy"].includes(action.style)) return;
             }
             const previous = room.ink.get(actor.id);
             if (action.phase !== "start" && previous?.id !== action.stroke) return;
@@ -180,7 +182,7 @@ export function roomSockets() {
               throw new Error("That stroke reached the board limit. Lift the pen, then continue or clear the board.");
             }
             const stroke: InkStroke = action.phase === "start"
-              ? { id: action.stroke, author: actor.id, color: action.color!, width: action.width!, points }
+              ? { id: action.stroke, author: actor.id, color: action.color!, width: action.width!, points, style: action.style || "pen" }
               : { ...previous!, points: [...previous!.points, ...points] };
             room.ink.set(actor.id, stroke);
             if (action.phase === "end") finishInk(room, actor.id);
@@ -230,6 +232,13 @@ export function roomSockets() {
             if (!text) return;
             room.chat = [...room.chat.slice(-49), { id: randomUUID(), name: actor.name, text }];
             break;
+          }
+          case "reaction": {
+            if (current.mode !== "family" || !roomReactions.includes(action.emoji) || now - reactedAt < 650) return;
+            reactedAt = now;
+            const reaction: RoomEvent = { type: "reaction", id: randomUUID(), emoji: action.emoji, name: actor.name };
+            room.clients.forEach((_, viewer) => send(viewer, reaction));
+            return;
           }
           case "present":
             if (typeof action.value !== "boolean") return;
