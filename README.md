@@ -55,7 +55,7 @@ Calls currently use STUN servers; restrictive networks may require a TURN relay,
 
 ## BBTV Spaces pilot
 
-Open `/spaces` to create a reusable four-seat room. A single activity picker switches between study, meeting, catch-up, and synchronized movie playback without ending the call. The server saves the room name, activity, board, and paused watch state in SQLite. The latest chat and hand raises are live-session state. Older watch-party links still route to the classic application.
+Open `/` or `/spaces` to create a reusable four-seat room. Study opens a handwriting desk, Meet uses a meeting workspace, and Family opens a lounge with video and live reactions. Study and Meet have a shared freehand board with pen, highlighter, calligraphy, eraser, and PNG export. The activity picker changes rooms without ending the call. The server saves the room name, activity, handwriting, notes, and paused watch state in SQLite. Chat, reactions, and hand raises are live-session state. Older `?room=` invitations and `/classic` open the classic watch party.
 
 Use Node 24. Run `npm ci` and `npm run dev`, or `npm run build && npm start`. Run `npm run test:integration` for the WebSocket and restart tests, and `npm run test:browser` with Chromium installed for the complete room flows.
 

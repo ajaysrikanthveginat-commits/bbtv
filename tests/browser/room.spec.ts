@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('entry, invitation, two-person chat, cinema mode, and session recovery', async ({page,browser}, testInfo) => {
-  await page.goto('/');
+  await page.goto('/classic');
   await expect(page.getByRole('heading',{level:1})).toContainText('A night');
   await page.getByRole('button', {name: 'Play the preview'}).click();
   await expect(page.getByRole('dialog', {name: 'BBTV preview'})).toBeVisible();
@@ -80,7 +80,7 @@ test('entry, invitation, two-person chat, cinema mode, and session recovery', as
 });
 
 test('invitation dialog traps focus and closes on Escape',async({page})=>{
-  await page.goto('/');
+  await page.goto('/classic');
   await page.getByLabel('Your name').fill('Alex');
   await page.getByRole('button',{name:'Start movie night'}).click();
   await page.getByRole('button',{name:'Invite',exact:true}).click();
@@ -90,7 +90,7 @@ test('invitation dialog traps focus and closes on Escape',async({page})=>{
 });
 
 test('actual media playback stays together after countdown, seek, and break', async ({page,browser}) => {
-  await page.goto('/');
+  await page.goto('/classic');
   await page.getByLabel('Your name').fill('Alex');
   await page.getByRole('button',{name:'Start movie night'}).click();
   await page.getByRole('button',{name:'Invite',exact:true}).click();

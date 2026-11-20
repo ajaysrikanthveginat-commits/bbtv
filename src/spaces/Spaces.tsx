@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, PointerEvent } from "react";
 import { ArrowDownRight, ArrowLeft, ArrowRight, AudioLines, BookOpen, Check, CircleHelp, Clapperboard, Copy, DoorOpen, Hand, Heart, LayoutGrid, Mic, MicOff, Monitor, Plus, Send, Video, VideoOff, StickyNote, X } from "lucide-react";
-import { capacity, modes, type Member, type Mode, type NoteKind } from "./protocol";
+import { capacity, modes, roomReactions, type Member, type Mode, type NoteKind } from "./protocol";
 import { readLocal, useRoom, writeLocal } from "./useRoom";
 import { Screen, stamp } from "./Screen";
 import { Whiteboard } from "./Whiteboard";
+import { RoomPeople } from "./RoomPeople";
 import "./spaces.css";
+import "./rooms.css";
 
 const activities = {
   study: { title: "Study", detail: "Work through questions together", icon: BookOpen, board: "Study board", description: "Save questions and explanations for your next session." },
   meet: { title: "Meet", detail: "Talk, present, and record decisions", icon: LayoutGrid, board: "Meeting notes", description: "Keep decisions and follow-ups where the team can find them." },
-  family: { title: "Catch up", detail: "Make time for the people you miss", icon: Heart, board: "Room notes", description: "Leave a note or a plan for the next catch-up." },
+  family: { title: "Family", detail: "Make time for the people you miss", icon: Heart, board: "Room notes", description: "Leave a note or a plan for the next catch-up." },
   watch: { title: "Watch", detail: "Press play on the same screen", icon: Clapperboard, board: "Shared moments", description: "Pin scenes while you watch and jump back to them together." },
 };
 type SavedRoom = { id: string; name: string; mode: Mode };
@@ -93,6 +95,7 @@ export default function Spaces() {
     setSaved(recent);
   }, [space?.id, space?.mode, space?.name]);
   useEffect(() => { if (panel === "chat") chatEnd.current?.parentElement?.scrollTo({ top: chatEnd.current.parentElement.scrollHeight }); }, [space?.chat.length, panel]);
+  useEffect(() => { setPanel(space?.mode === "family" ? "chat" : "board"); setShowDrawing(true); }, [space?.mode]);
 
   function pickInvite(value: string) {
     const text = value.trim();
@@ -130,7 +133,7 @@ export default function Spaces() {
   if (!space) return <div className="spaces-home">
     <header className="spaces-nav">
       <a href="/spaces" className="spaces-brand" aria-label="BBTV Spaces home">BBTV<i>.</i></a>
-      <a href="/" className="spaces-classic">Classic watch party <ArrowDownRight size={15}/></a>
+      <a href="/classic" className="spaces-classic">Classic watch party <ArrowDownRight size={15}/></a>
     </header>
     <main className="spaces-home-main">
       <section className="spaces-hero" onPointerMove={trackPointer} onPointerLeave={resetPointer}>
@@ -176,12 +179,14 @@ export default function Spaces() {
     <header className="room-nav">
       <button className="space-icon" onClick={leave} aria-label="Back to rooms"><ArrowLeft size={20}/></button>
       <div><strong>{space.name}</strong><span><i className={r.online ? "online" : ""}/>{r.online ? `${space.members.length} of ${capacity} seats` : "Reconnecting…"}</span></div>
+      <span className="room-mode-label">{space.mode === "study" ? <BookOpen size={14}/> : space.mode === "family" ? <Heart size={14}/> : space.mode === "meet" ? <LayoutGrid size={14}/> : <Clapperboard size={14}/>} {current.title}</span>
       <button className="space-button invite-action" onClick={() => { setCopy(false); shareDialog.current?.showModal(); }}><Copy size={15}/> Invite</button>
     </header>
     <main className="room-workspace">
       <div className="room-main">
         <div className="stage-heading">
-          <div><span className="spaces-overline">CURRENT ACTIVITY</span><h1 key={presenter ? "presentation" : space.mode}>{presenter ? "Presentation" : current.title}</h1></div>
+          <div><span className="spaces-overline">{space.mode === "study" ? "A LITTLE SPACE TO LEARN" : space.mode === "meet" ? "ROOM TO THINK TOGETHER" : space.mode === "family" ? "YOUR PEOPLE, ONE PLACE" : "CURRENT ACTIVITY"}</span>
+            <h1 key={presenter ? "presentation" : space.mode}>{presenter ? "Presentation" : space.mode === "family" ? "Family lounge" : space.mode === "meet" ? "Meeting room" : current.title}</h1></div>
           <label className="activity-picker"><span>Activity</span>
             <select aria-label="Room activity" value={space.mode} disabled={!host || !r.online} onChange={event => r.send({ type: "mode", mode: event.target.value as Mode })}>
               {modes.map(key => <option key={key} value={key}>{activities[key].title}</option>)}
@@ -190,7 +195,7 @@ export default function Spaces() {
         </div>
         {canDraw && !presenter && <div className="whiteboard-switch" role="group" aria-label="Room stage">
           <button aria-pressed={showDrawing} onClick={() => setShowDrawing(true)}>Whiteboard</button>
-          <button aria-pressed={!showDrawing} onClick={() => setShowDrawing(false)}>Cameras</button>
+          <button aria-pressed={!showDrawing} onClick={() => setShowDrawing(false)}>{space.mode === "meet" ? "Discussion" : "Cameras"}</button>
         </div>}
         <div className="media-stage">
           {drawingVisible && <Whiteboard drawing={space.drawing} ink={space.ink} id={r.id} host={host} online={r.online} error={r.error} send={r.send}/>}
@@ -203,23 +208,32 @@ export default function Spaces() {
             {space.members.map(member => <Tile key={member.id} member={member} own={member.id === r.id} stream={member.id === r.id ? ownStream : r.remote[member.id]?.call}/>)}
             {space.members.length < capacity && !(presenter || space.mode === "watch" || drawingVisible) && <button className="space-tile empty-seat" onClick={() => { setCopy(false); shareDialog.current?.showModal(); }}><Plus size={23}/> Invite to an open seat</button>}
           </div>
+          {space.mode === "family" && <div className="family-reaction-stream" aria-live="polite">
+            {r.reactions.map(reaction => <div className="family-reaction" key={reaction.id}><span aria-hidden="true">{reaction.emoji}</span><small>{reaction.name} sent {reaction.emoji}</small></div>)}
+          </div>}
         </div>
+        {space.mode === "family" && <div className="family-social">
+          <div className="family-reactions" role="group" aria-label="Family reactions">
+            {roomReactions.map(emoji => <button key={emoji} aria-label={`Send ${emoji} reaction`} disabled={!r.online} onClick={() => r.send({type:"reaction",emoji})}>{emoji}</button>)}
+          </div>
+          {host && <button className="space-button" disabled={!r.online} onClick={() => r.send({type:"mode",mode:"watch"})}><Clapperboard size={16}/> Movie night</button>}
+        </div>}
         <nav className="space-dock" aria-label="Call controls">
           <button className="space-button" aria-pressed={!!r.local.audio} disabled={!r.online} onClick={() => void r.toggle("audio")}>{r.local.audio ? <Mic size={17}/> : <MicOff size={17}/>}<span>Mic</span></button>
           <button className="space-button" aria-pressed={!!r.local.camera} disabled={!r.online} onClick={() => void r.toggle("camera")}>{r.local.camera ? <Video size={17}/> : <VideoOff size={17}/>}<span>Camera</span></button>
           <button className="space-button" aria-pressed={!!r.local.screen} disabled={!r.online || (!!presenter && presenter.id !== r.id)} onClick={() => void r.toggle("screen")}><Monitor size={17}/><span>Share</span></button>
           <button className="space-button" aria-pressed={!!own?.hand} disabled={!r.online} onClick={() => r.send({ type: "hand", value: !own?.hand })}><Hand size={17}/><span>Hand</span></button>
-          <button className="space-button focus-toggle" aria-pressed={focus} onClick={() => setFocus(!focus)}><LayoutGrid size={17}/><span>{focus ? "Show board" : "Focus"}</span></button>
+          <button className="space-button focus-toggle" aria-pressed={focus} onClick={() => setFocus(!focus)}><LayoutGrid size={17}/><span>{focus ? "Show panel" : "Focus"}</span></button>
           <button className="space-button leave-room" onClick={leave}><DoorOpen size={17}/><span>Leave</span></button>
         </nav>
         {r.error && <div className="space-error room-error" role="alert">{r.error}<button className="space-icon" aria-label="Dismiss notice" onClick={() => r.setError("")}><X size={17}/></button></div>}
       </div>
       <aside className="space-board">
         <div className="board-tabs" role="group" aria-label="Room tools">
-          <button aria-pressed={panel === "board"} onClick={() => setPanel("board")}><StickyNote size={16}/> Board</button>
+          <button aria-pressed={panel === "board"} onClick={() => setPanel("board")}><StickyNote size={16}/> {canDraw ? "People" : "Notes"}</button>
           <button aria-pressed={panel === "chat"} onClick={() => setPanel("chat")}><AudioLines size={17}/> Chat</button>
         </div>
-        {panel === "board" ? <>
+        {panel === "board" && canDraw ? <RoomPeople space={space} id={r.id} online={r.online} send={r.send}/> : panel === "board" ? <>
           <div className="board-title" key={space.mode}><h2>{current.board}</h2><p>{current.description}</p></div>
           <form className="note-form" onSubmit={event => { event.preventDefault(); if (note.trim() && r.send({ type: "note", text: note, kind, pin: space.mode === "watch" && !!space.watch.url })) setNote(""); }}>
             <label className="sr-only" htmlFor="board-note">Write to the room board</label>
@@ -239,7 +253,7 @@ export default function Spaces() {
             </li>)}
           </ol>
         </> : <>
-          <div className="board-title"><h2>Conversation</h2><p>Chat stays with this live session.</p></div>
+          <div className="board-title"><h2>{space.mode === "family" ? "Family chat" : "Conversation"}</h2><p>Chat stays with this live session.</p></div>
           <div className="space-chat-list" aria-label="Room messages">{space.chat.map(message => <div key={message.id}><strong>{message.name}</strong><p>{message.text}</p></div>)}<div ref={chatEnd}/></div>
           <form className="space-chat-form" onSubmit={event => { event.preventDefault(); if (chat.trim() && r.send({type:"chat",text:chat})) setChat(""); }}>
             <input aria-label="Message the room" placeholder="Message the room" maxLength={600} required value={chat} onChange={event => setChat(event.target.value)}/>

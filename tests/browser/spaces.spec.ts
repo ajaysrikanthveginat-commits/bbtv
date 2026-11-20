@@ -17,6 +17,57 @@ async function camera(page: Page, name: string) {
   return page.getByLabel(name + " camera", {exact:true}).evaluate((element: HTMLVideoElement) => element.videoWidth);
 }
 
+test("the main address opens handwriting and each activity has its own room", async ({page,browser},info) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading",{level:1})).toHaveText(/A place to\s*show up\./);
+  await page.getByLabel("Your name").fill("Alex");
+  await page.getByLabel("Room name").fill("Our room");
+  await page.getByRole("button",{name:"Create room",exact:true}).click();
+  await expect(page.locator(".activity-study")).toBeVisible();
+  await expect(page.locator("textarea")).toHaveCount(0);
+  const link = await invite(page);
+  const context = await browser.newContext();
+  try {
+    const guest = await context.newPage();
+    await join(guest,link,"Sam");
+    await page.getByRole("button",{name:"Calligraphy pen",exact:true}).click();
+    let paper = page.getByRole("img",{name:"Drawing surface",exact:true});
+    await paper.scrollIntoViewIfNeeded();
+    const rect = (await paper.boundingBox())!;
+    await page.mouse.move(rect.x+rect.width*.2,rect.y+rect.height*.3);
+    await page.mouse.down();
+    await page.mouse.move(rect.x+rect.width*.65,rect.y+rect.height*.5,{steps:18});
+    await page.mouse.up();
+    await expect(guest.locator('path[data-pen="calligraphy"]')).toHaveCount(1);
+    await page.screenshot({path:info.outputPath("study-room.png"),fullPage:true,animations:"disabled"});
+    const downloaded = page.waitForEvent("download");
+    await page.getByRole("button",{name:"Download handwriting"}).click();
+    expect((await downloaded).suggestedFilename()).toBe("BBTV-whiteboard.png");
+    await page.getByLabel("Room activity").selectOption("meet");
+    await expect(guest.locator(".activity-meet")).toBeVisible();
+    await expect(page.locator("textarea")).toHaveCount(0);
+    await expect(guest.locator('path[data-pen="calligraphy"]')).toHaveCount(1);
+    await page.getByRole("button",{name:"Discussion",exact:true}).click();
+    await expect(page.getByRole("img",{name:"Drawing surface",exact:true})).toHaveCount(0);
+    await page.getByRole("button",{name:"Whiteboard",exact:true}).click();
+    await expect(page.locator('path[data-pen="calligraphy"]')).toHaveCount(1);
+    await page.screenshot({path:info.outputPath("meeting-room.png"),fullPage:true,animations:"disabled"});
+    await page.getByLabel("Room activity").selectOption("family");
+    await expect(guest.locator(".activity-family")).toBeVisible();
+    await expect(guest.getByRole("heading",{name:"Family chat"})).toBeVisible();
+    await expect(page.getByRole("img",{name:"Drawing surface",exact:true})).toHaveCount(0);
+    await page.getByRole("button",{name:"Send ❤️ reaction"}).click();
+    await expect(guest.locator(".family-reaction")).toContainText("Alex sent ❤️");
+    await page.screenshot({path:info.outputPath("family-room.png"),fullPage:true,animations:"disabled"});
+    await page.getByRole("button",{name:"Movie night",exact:true}).click();
+    await expect(guest.locator(".activity-watch")).toBeVisible();
+    await page.getByLabel("Room activity").selectOption("study");
+    await expect(page.getByRole("img",{name:"Drawing surface",exact:true})).toBeVisible();
+    await expect(page.locator('path[data-pen="calligraphy"]')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  } finally { await context.close(); }
+});
+
 test("handwriting streams live, erases, undoes, and returns with the room", async ({page,browser},info) => {
   await page.goto("/spaces");
   await page.getByLabel("Your name").fill("Alex");
@@ -63,7 +114,7 @@ test("handwriting streams live, erases, undoes, and returns with the room", asyn
     await page.getByRole("button",{name:"Whiteboard",exact:true}).click();
     await expect(page.locator("[data-stroke]")).toHaveCount(1);
     await page.getByLabel("Room activity").selectOption("meet");
-    await expect(guest.getByRole("heading",{name:"Meeting notes"})).toBeVisible();
+    await expect(guest.getByRole("heading",{name:"People",exact:true})).toBeVisible();
     await expect(guest.locator("[data-stroke]")).toHaveCount(1);
     await guest.getByRole("button",{name:"Leave",exact:true}).click();
     await page.getByRole("button",{name:"Leave",exact:true}).click();
@@ -148,14 +199,10 @@ test("four people can join, use cameras, and change activities without leaving",
     for (const viewer of [sam,noa,priya]) await expect.poll(() => camera(viewer,"Alex"),{timeout:15000}).toBeGreaterThan(0);
     await noa.getByRole("button", {name:"Hand",exact:true}).click();
     await expect(page.locator(".hand-raised")).toContainText("Noa");
-    await noa.getByLabel("Note type").selectOption("question");
-    await noa.getByLabel("Write to the room board").fill("Why does the queue need a tie breaker?");
-    await noa.getByRole("button",{name:"Save to room"}).click();
-    await expect(page.getByText("Why does the queue need a tie breaker?")).toBeVisible();
-    await page.getByRole("button", {name:"Mark resolved"}).click();
-    await expect(sam.getByLabel("Resolved")).toBeVisible();
+    await expect(noa.locator("textarea")).toHaveCount(0);
+    await expect(noa.getByRole("img",{name:"Drawing surface",exact:true})).toBeVisible();
     await page.getByLabel("Room activity").selectOption("meet");
-    await expect(priya.getByRole("heading", {name:"Meeting notes"})).toBeVisible();
+    await expect(priya.getByRole("heading", {name:"People",exact:true})).toBeVisible();
     await expect.poll(() => camera(priya,"Alex"),{timeout:10000}).toBeGreaterThan(0);
     await page.getByRole("button", {name:"Share",exact:true}).click();
     await expect(sam.getByRole("heading", {name:"Presentation"})).toBeVisible();

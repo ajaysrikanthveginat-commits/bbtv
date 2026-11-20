@@ -6,6 +6,6 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {location.pathname === "/spaces" || new URLSearchParams(location.search).has("space") ? <Spaces /> : <App />}
+    {location.pathname === "/classic" || new URLSearchParams(location.search).has("room") ? <App /> : <Spaces />}
   </StrictMode>,
 );

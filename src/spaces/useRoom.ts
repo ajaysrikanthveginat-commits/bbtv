@@ -21,6 +21,7 @@ export function useRoom() {
   const [persistent, setPersistent] = useState(false);
   const [offset, setOffset] = useState(0);
   const [remote, setRemote] = useState<Record<string, Incoming>>({});
+  const [reactions, setReactions] = useState<{ id: string; emoji: string; name: string; at: number }[]>([]);
   const [local, setLocal] = useState<Partial<Record<Slot, MediaStreamTrack>>>({});
   const socket = useRef<WebSocket | null>(null);
   const media = useRef<RoomMedia | null>(null);
@@ -47,6 +48,12 @@ export function useRoom() {
     setLocal({});
   }, []);
   function begin(action: Entry) { setError(""); setEntry(action); }
+
+  useEffect(() => {
+    if (!reactions.length) return;
+    const timer = setTimeout(() => setReactions(current => current.filter(item => Date.now() - item.at < 3200)), 3400);
+    return () => clearTimeout(timer);
+  }, [reactions]);
 
   useEffect(() => {
     if (!entry) return;
@@ -113,6 +120,9 @@ export function useRoom() {
             });
             break;
           case "rtc": media.current?.receive(message.from, message.signal); break;
+          case "reaction":
+            setReactions(current => [...current.slice(-5), { ...message, at: Date.now() }]);
+            break;
           case "clock": setOffset(message.now - (message.at + Date.now()) / 2); break;
           case "error":
             setError(message.message);
@@ -154,6 +164,7 @@ export function useRoom() {
       stopTracks();
       setRemote({});
       setOnline(false);
+      setReactions([]);
     };
   }, [entry, fail, send, setTrack, stopTracks]);
 
@@ -220,5 +231,5 @@ export function useRoom() {
     }
   }
 
-  return { begin, leave, send, toggle, space, id, online, persistent, remote, local, offset, error, setError, joining: !!entry && !space };
+  return { begin, leave, send, toggle, space, id, online, persistent, remote, local, offset, error, setError, reactions, joining: !!entry && !space };
 }
