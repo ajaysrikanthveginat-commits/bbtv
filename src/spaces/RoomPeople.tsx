@@ -12,6 +12,14 @@ export function RoomPeople({ space, id, online, send }: {
       <h2>{space.mode === "study" ? "Study circle" : "People"}</h2>
       <p>{space.mode === "study" ? "Write with your mouse, finger, or pen. Your handwriting is shared live." : "Everyone can use the whiteboard. Share your screen to present."}</p>
     </div>
+    {space.notes.some(note=>note.kind==="question"&&!note.done)&&<div className="open-questions">
+      <h3>Open questions</h3>
+      {space.notes.filter(note=>note.kind==="question"&&!note.done).map(note=><div key={note.id}>
+        <small>{note.author}</small><p>{note.text}</p>
+        {note.page&&<button className="space-text-button" disabled={!online} onClick={()=>send({type:"page",action:"select",id:note.page})}>Open page</button>}
+        {space.host===id&&<button className="space-text-button" disabled={!online} onClick={()=>send({type:"resolve",id:note.id})}>Mark resolved</button>}
+      </div>)}
+    </div>}
     <ul className="room-roster" aria-label="People and device status">
       {space.members.map(member => <li key={member.id}>
         <span className="roster-avatar" aria-hidden="true">{member.name.slice(0,1)}</span>
