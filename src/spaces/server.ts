@@ -51,7 +51,8 @@ export function roomSockets(app?: Express) {
       const record = load.get(id) as {document:string}|undefined;
       if (!record) return {id,exists:false,people:0};
       const document = live.get(id)?.space || migrateDocument(JSON.parse(record.document));
-      return {id,exists:true,name:document.name,mode:document.mode,people:live.get(id)?.clients.size||0,updatedAt:document.updatedAt,questions:document.notes.filter(note=>note.kind==="question"&&!note.done).length};
+      const unresolved = document.notes.filter(note => note.kind === "question" && !note.done);
+      return {id,exists:true,name:document.name,mode:document.mode,people:live.get(id)?.clients.size||0,updatedAt:document.updatedAt,questions:unresolved.length,firstQuestion:unresolved[0]?.text};
     }));
   });
   const iceServers: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
@@ -97,7 +98,7 @@ export function roomSockets(app?: Express) {
     if (!stroke) return;
     save(room, { ...room.space, drawing: { ...room.space.drawing, strokes: [...room.space.drawing.strokes, stroke] } });
     room.ink.delete(actor);
-    room.redo.delete(actor);
+    room.redo.delete(stroke.author);
     publishInk(room, stroke, true);
   }
   function resetPlayback(room: Live) {
@@ -193,7 +194,8 @@ export function roomSockets(app?: Express) {
           const owner = !!candidate && hash(candidate) === stored.owner && ![...target.clients.values()].some(member => member.owner);
           resetPlayback(target);
           room = target;
-          actor = { id: randomUUID(), name, owner, hand: false, audio: false, video: false,avatar:validAvatar(action.avatar)?action.avatar:undefined };
+          const writer = hash("writer:" + id + ":" + resumeKey);
+          actor = { id: randomUUID(), writer, name, owner, hand: false, audio: false, video: false,avatar:validAvatar(action.avatar)?action.avatar:undefined };
           room.clients.set(ws, actor);
           room.sessions.set(hash(resumeKey),actor.id);
           const activeIds=new Set([...room.clients.values()].map(member=>member.id));
@@ -242,7 +244,7 @@ export function roomSockets(app?: Express) {
               throw new Error("That stroke reached the board limit. Lift the pen, then continue or clear the board.");
             }
             const stroke: InkStroke = action.phase === "start"
-              ? { id: action.stroke, author: actor.id, color: action.color!, width: action.width!, points, style: action.style || "pen" }
+              ? { id: action.stroke, author: actor.writer, color: action.color!, width: action.width!, points, style: action.style || "pen" }
               : { ...previous!, points: [...previous!.points, ...points] };
             room.ink.set(actor.id, stroke);
             if (action.phase === "end") finishInk(room, actor.id);
@@ -250,15 +252,15 @@ export function roomSockets(app?: Express) {
             return;
           }
           case "draw-undo": {
-            const index = current.drawing.strokes.map(stroke => stroke.author).lastIndexOf(actor.id);
+            const index = current.drawing.strokes.map(stroke => stroke.author).lastIndexOf(actor.writer);
             if (index < 0) return;
-            const previous = room.redo.get(actor.id);
+            const previous = room.redo.get(actor.writer);
             save(room, { ...current, drawing: { ...current.drawing, strokes: current.drawing.strokes.filter((_, i) => i !== index) } });
-            room.redo.set(actor.id,{page:current.page,strokes:[...(previous?.page===current.page?previous.strokes:[]),current.drawing.strokes[index]]});
+            room.redo.set(actor.writer,{page:current.page,strokes:[...(previous?.page===current.page?previous.strokes:[]),current.drawing.strokes[index]]});
             break;
           }
           case "draw-redo": {
-            const redo = room.redo.get(actor.id);
+            const redo = room.redo.get(actor.writer);
             if (!redo || redo.page !== current.page || !redo.strokes.length || current.drawing.strokes.length >= 300) return;
             const stroke = redo.strokes.at(-1)!;
             const count = current.pages.flatMap(page=>page.strokes).reduce((total,item)=>total+item.points.length,0);

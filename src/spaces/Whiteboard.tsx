@@ -7,8 +7,8 @@ import { InkPaths } from "./InkPaths";
 const colorNames = ["Forest", "Terracotta", "Blue", "Violet"];
 type Draft = { stroke: InkStroke; buffer: InkPoint[]; pointer: number; revision: number };
 
-export function Whiteboard({ drawing, ink, id, host, online, error, send, pages, page, redo, saving, pointers, notes }: {
-  drawing: Drawing; ink: InkStroke[]; id: string; host: boolean; online: boolean; error: string;
+export function Whiteboard({ drawing, ink, writer, host, online, error, send, pages, page, redo, saving, pointers, notes }: {
+  drawing: Drawing; ink: InkStroke[]; writer: string; host: boolean; online: boolean; error: string;
   pages:BoardPage[];page:string;redo:boolean;saving:boolean;pointers:RoomPointer[];notes:Note[];
   send: (action: RoomRequest) => boolean;
 }) {
@@ -74,7 +74,7 @@ export function Whiteboard({ drawing, ink, id, host, online, error, send, pages,
     surface.current!.setPointerCapture(event.pointerId);captured.current=event.pointerId;
     if(tool==="pan"){pan.current={x:event.clientX,y:event.clientY,view};return;}
     if(tool==="pointer"){pointedAt.current=0;move(event);return;}
-    const stroke: InkStroke = { id: crypto.randomUUID(), author: id, color: eraser ? "erase" : color, width: eraser ? 32 : width, points: [point(event)], style };
+    const stroke: InkStroke = { id: crypto.randomUUID(), author: writer, color: eraser ? "erase" : color, width: eraser ? 32 : width, points: [point(event)], style };
     if (!send({ type: "draw", revision: drawing.revision, stroke: stroke.id, phase: "start", points: stroke.points, color: stroke.color, width: stroke.width, style })) return;
     active.current = { stroke, pointer: event.pointerId, revision: drawing.revision, buffer: [] };
     setPreview(stroke);
@@ -151,7 +151,7 @@ export function Whiteboard({ drawing, ink, id, host, online, error, send, pages,
         {inkColors.slice(0, 4).map((value, index) => <button key={value} style={{ "--ink-color": value } as CSSProperties} aria-label={colorNames[index]} aria-pressed={color === value && !eraser} disabled={!online} onClick={() => { setTool("draw");setColor(value); setEraser(false); }}/>)}
       </div>
       <label className="ink-width"><span className="sr-only">Pen thickness</span><select aria-label="Pen thickness" value={width} disabled={!online || eraser} onChange={event => setWidth(Number(event.target.value))}><option value={3}>Fine</option><option value={6}>Medium</option><option value={12}>Bold</option></select></label>
-      <button className="space-icon" title="Undo" aria-label="Undo your last stroke" disabled={!online || !drawing.strokes.some(stroke => stroke.author === id)} onClick={() => send({ type: "draw-undo" })}><Undo2 size={17}/></button>
+      <button className="space-icon" title="Undo" aria-label="Undo your last stroke" disabled={!online || !drawing.strokes.some(stroke => stroke.author === writer)} onClick={() => send({ type: "draw-undo" })}><Undo2 size={17}/></button>
       <button className="space-icon" title="Redo" aria-label="Redo your last stroke" disabled={!online||!redo} onClick={()=>send({type:"draw-redo"})}><Redo2 size={17}/></button>
       <button className="space-icon" title="Pan the page" aria-label="Pan whiteboard" aria-pressed={tool==="pan"} onClick={()=>setTool(tool==="pan"?"draw":"pan")}><Hand size={17}/></button>
       <button className="space-icon" title="Shared pointer" aria-label="Shared board pointer" aria-pressed={tool==="pointer"} disabled={!online} onClick={()=>setTool(tool==="pointer"?"draw":"pointer")}><MousePointer2 size={17}/></button>

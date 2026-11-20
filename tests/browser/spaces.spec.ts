@@ -94,6 +94,10 @@ test("device checks, pages, recovery, and returning room cards work together",as
     await connection.waitForEvent("framereceived",event=>String(event.payload).includes('"type":"state"'));
     await expect(page.getByText("2 of 4 seats")).toBeVisible();
     await expect(page.locator("[data-stroke]")).toHaveCount(1);
+    await page.getByRole("button",{name:"Undo your last stroke",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(0);
+    await page.getByRole("button",{name:"Redo your last stroke",exact:true}).click();
+    await expect(guest.locator("[data-stroke]")).toHaveCount(1);
     await page.getByRole("button",{name:"Leave",exact:true}).click();
     await expect(page.locator(".recent-room-preview [data-stroke]")).toHaveCount(1);
     await expect(page.getByText("1 in the room",{exact:true})).toBeVisible({timeout:15000});

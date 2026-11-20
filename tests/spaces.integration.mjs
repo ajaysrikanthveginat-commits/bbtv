@@ -94,7 +94,7 @@ try {
   guest.ws.send(JSON.stringify({...stroke,phase:"end",points:[]}));
   assert.equal((await complete).stroke.points.length, 3);
   const boardFull = await perform(host,{type:"hand",value:true},event => event.type === "state" && event.space.drawing.strokes.length === 1);
-  assert.equal(boardFull.space.drawing.strokes[0].author,guest.joined.id);
+  assert.equal(boardFull.space.drawing.strokes[0].author,boardFull.space.members.find(member => member.id === guest.joined.id).writer);
   host.send(JSON.stringify({type:"draw-undo"}));
   const untouched = await perform(host,{type:"hand",value:false},event => event.type === "state");
   assert.equal(untouched.space.drawing.strokes.length,1);
@@ -102,6 +102,10 @@ try {
   assert.match((await perform(guest.ws,{...stroke,stroke:"bad",points:[[Infinity,2]]},event => event.type === "error")).message,/drawing/);
   await perform(host,{...stroke,stroke:"host-stroke"},event => event.type === "ink" && event.stroke.id === "host-stroke");
   await perform(host,{...stroke,stroke:"host-stroke",phase:"end",points:[[140,120]]},event => event.type === "ink" && event.finished && event.stroke.id === "host-stroke");
+  const reconnected = await client();
+  const resumedState = await perform(reconnected,{type:"join",room:initial.room,name:"Alex",ownerKey:initial.ownerKey,resumeKey:initial.resumeKey},event=>event.type==="state");
+  assert.equal(resumedState.space.members.find(member=>member.owner).writer,boardFull.space.members.find(member=>member.owner).writer);
+  host = reconnected;
   const undone = await perform(host,{type:"draw-undo"},event => event.type === "state");
   assert.deepEqual(undone.space.drawing.strokes.map(stroke => stroke.id),["first"]);
   await stop();
@@ -131,7 +135,7 @@ try {
   await perform(back,{...freshStroke,phase:"end",points:[[200,200]]},event=>event.type==="ink"&&event.finished);
   const undo=await perform(back,{type:"draw-undo"},event=>event.type==="state");
   assert.equal(undo.space.drawing.strokes.length,0);
-  assert.ok(undo.space.redo.includes(reopened.space.members[0].id));
+  assert.ok(undo.space.redo.includes(reopened.space.members[0].writer));
   const redo=await perform(back,{type:"draw-redo"},event=>event.type==="state");
   assert.equal(redo.space.drawing.strokes[0].id,"redo-me");
   const second=await perform(back,{type:"page",action:"add"},event=>event.type==="state"&&event.space.pages.length===2);
@@ -164,7 +168,7 @@ try {
   back.send(JSON.stringify({type:"reaction",expression:"laugh"}));
   assert.equal((await reaction).avatar.expression,"laugh");
   const summary=await fetch(`http://127.0.0.1:${port}/api/spaces/summary`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ids:[initial.room,"invalid"]})}).then(response=>response.json());
-  assert.equal(summary.length,1);assert.equal(summary[0].people,2);assert.equal(summary[0].questions,1);
+  assert.equal(summary.length,1);assert.equal(summary[0].people,2);assert.equal(summary[0].questions,1);assert.equal(summary[0].firstQuestion,"Explain this part of Page 1");
   let files=[];
   for(let attempt=0;attempt<25;attempt++){
     try {files=await readdir(join(directory,"backups"));} catch {}

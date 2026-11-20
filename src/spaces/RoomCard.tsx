@@ -4,7 +4,7 @@ import { cachedRoom, downloadBackup } from "./cache";
 import { InkPaths } from "./InkPaths";
 import type { Mode, RoomDocument } from "./protocol";
 
-export interface RoomSummary {id:string;exists:boolean;people:number;updatedAt?:number;questions?:number;name?:string;mode?:Mode}
+export interface RoomSummary {id:string;exists:boolean;people:number;updatedAt?:number;questions?:number;firstQuestion?:string;name?:string;mode?:Mode}
 export function RoomCard({room,summary,disabled,onOpen,onRestore}:{
   room:{id:string;name:string;mode:Mode};summary?:RoomSummary;disabled:boolean;
   onOpen:(id:string)=>void;onRestore:(document:RoomDocument)=>void;
@@ -13,6 +13,8 @@ export function RoomCard({room,summary,disabled,onOpen,onRestore}:{
   useEffect(()=>{let active=true;void cachedRoom(room.id).then(value=>{if(active)setDocument(value);}).catch(()=>{});return ()=>{active=false;};},[room.id]);
   const strokes=document?.pages.find(page=>page.id===document.page)?.strokes||[];
   const questions=document?.notes.filter(note=>note.kind==="question"&&!note.done)||[];
+  const questionCount = summary?.questions ?? questions.length;
+  const firstQuestion = summary?.exists ? summary.firstQuestion : questions[0]?.text;
   return <li className="recent-room">
     <button className="recent-room-open" disabled={disabled||summary?.exists===false} onClick={()=>onOpen(room.id)}>
       <div className="recent-room-preview" aria-hidden="true">
@@ -23,7 +25,7 @@ export function RoomCard({room,summary,disabled,onOpen,onRestore}:{
         {summary?.updatedAt&&<small>Saved {new Date(summary.updatedAt).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</small>}
       </div><ArrowRight size={17}/>
     </button>
-    {questions.length>0&&<p className="recent-room-question">{questions.length} open question{questions.length===1?"":"s"} · {questions[0].text}</p>}
+    {questionCount>0&&<p className="recent-room-question">{questionCount} open question{questionCount===1?"":"s"}{firstQuestion && " · " + firstQuestion}</p>}
     {document&&<div className="recent-room-backups">
       <button className="space-text-button" aria-label={"Download backup of "+room.name} onClick={()=>downloadBackup(document)}><Download size={13}/> Backup</button>
       <button className="space-text-button" aria-label={"Restore a copy of "+room.name} disabled={disabled} onClick={()=>onRestore(document)}><RotateCcw size={13}/> Restore a copy</button>

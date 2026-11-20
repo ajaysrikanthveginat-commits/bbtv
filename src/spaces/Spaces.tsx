@@ -232,8 +232,8 @@ export default function Spaces() {
           <button aria-pressed={!showDrawing} onClick={() => setShowDrawing(false)}>{space.mode === "meet" ? "Discussion" : "Cameras"}</button>
         </div>}
         <div className="media-stage">
-          {drawingVisible && <Whiteboard drawing={space.drawing} ink={space.ink} id={r.id} host={host} online={r.online} error={r.error} send={r.send}
-            pages={space.pages} page={space.page} redo={space.redo.includes(r.id)} saving={r.saving} pointers={r.pointers} notes={space.notes}/>}
+          {drawingVisible && <Whiteboard drawing={space.drawing} ink={space.ink} writer={own?.writer || r.id} host={host} online={r.online} error={r.error} send={r.send}
+            pages={space.pages} page={space.page} redo={space.redo.includes(own?.writer || r.id)} saving={r.saving} pointers={r.pointers} notes={space.notes}/>}
           {presenter && <div className="room-presentation" onPointerMove={event=>{
             if(!screenPointer||!r.online||(!host&&presenter.id!==r.id)||Date.now()-pointerTime.current<65)return;
             pointerTime.current=Date.now();const bounds=event.currentTarget.getBoundingClientRect();

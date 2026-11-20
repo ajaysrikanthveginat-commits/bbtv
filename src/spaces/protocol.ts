@@ -31,6 +31,7 @@ export interface RoomBackup { format: "bbtv-room"; document: RoomDocument }
 
 export interface Member {
   id: string;
+  writer: string;
   name: string;
   owner: boolean;
   hand: boolean;
