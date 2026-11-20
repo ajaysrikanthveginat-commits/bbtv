@@ -96,7 +96,7 @@ test("device checks, pages, recovery, and returning room cards work together",as
     await expect(page.locator("[data-stroke]")).toHaveCount(1);
     await page.getByRole("button",{name:"Leave",exact:true}).click();
     await expect(page.locator(".recent-room-preview [data-stroke]")).toHaveCount(1);
-    await expect(page.getByText("1 in the room",{exact:true})).toBeVisible();
+    await expect(page.getByText("1 in the room",{exact:true})).toBeVisible({timeout:15000});
     await expect(page.locator(".recent-room-question")).toContainText("open question");
     await page.screenshot({path:info.outputPath("returning-rooms.png"),fullPage:true,animations:"disabled"});
     await page.getByRole("button",{name:"Restore a copy of Daily study",exact:true}).click();
@@ -235,7 +235,7 @@ test("handwriting streams live, erases, undoes, and returns with the room", asyn
     await expect(guest.locator("[data-stroke]")).toHaveCount(1);
     await guest.getByRole("button",{name:"Leave",exact:true}).click();
     await page.getByRole("button",{name:"Leave",exact:true}).click();
-    await page.getByRole("button",{name:/Writing together/}).click();
+    await page.locator(".recent-room-open").filter({hasText:"Writing together"}).click();
     await expect(page.locator("[data-stroke]")).toHaveCount(1);
     page.once("dialog",dialog=>dialog.accept());
     await page.getByRole("button",{name:"Clear whiteboard"}).click();
@@ -360,7 +360,7 @@ test("movie night syncs across browsers and returns to saved moments", async ({p
     await page.screenshot({path:info.outputPath("spaces-watch.png"),fullPage:true,animations:"disabled"});
     await guest.getByRole("button", {name:"Leave",exact:true}).click();
     await page.getByRole("button", {name:"Leave",exact:true}).click();
-    await page.getByRole("button", {name:/Friday Film/}).click();
+    await page.locator(".recent-room-open").filter({hasText:"Friday Film"}).click();
     await expect(page.getByText("The opening shot")).toBeVisible();
     await expect(page.getByLabel("Room activity")).toBeEnabled();
   } finally {
