@@ -1166,6 +1166,17 @@ button:disabled {
 .cut-timeline-marks i { display:block; position:absolute; top:50%; width:4px; height:7px; translate:-50% calc(-50% + 7px); background:var(--coral); border-radius:1px; }
 
 /* BBTV Screening Room */
+@font-face {
+  font-family:"Barlow Condensed";
+  src:url("/classic-fonts/barlow-condensed-semibold.woff2") format("woff2");
+  font-style:normal;
+  font-weight:600;
+  font-display:swap;
+}
+.salon-home,.salon-room {
+  --classic-title:"Barlow Condensed","Arial Narrow",sans-serif;
+  --classic-text:"Bricolage Grotesque",system-ui,sans-serif;
+}
 .salon-home {
   --ink:#231a17;
   --paper:#f2e9da;
@@ -1173,18 +1184,22 @@ button:disabled {
   background:var(--paper);
   color:var(--ink);
   min-height:100dvh;
-  font-family:"DM Sans",system-ui,sans-serif;
+  font-family:var(--classic-text);
 }
 .salon-home main,.salon-nav { max-width:1550px; margin-inline:auto; padding-inline:clamp(22px,6vw,92px); }
 .salon-nav { display:flex; justify-content:space-between; align-items:center; min-height:74px; }
 .salon-nav button { display:flex; gap:8px; align-items:center; font-size:13px; color:#5c4a42; min-height:44px; }
-.salon-wordmark { color:var(--ink); font:400 42px/.8 "Instrument Serif",Georgia,serif; text-decoration:none; letter-spacing:-.055em; }
+.salon-wordmark { color:var(--ink); font:800 38px/.95 var(--classic-text); text-decoration:none; letter-spacing:-.055em; }
 .salon-wordmark span { color:#974955; }
 .salon-hero { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); align-items:center; gap:clamp(25px,5vw,80px); border-top:1px solid #b5a397; padding-block:26px; }
 .salon-intro { animation:salon-arrive .65s both; }
-.salon-intro h1 { font:400 clamp(70px,9.8vw,151px)/.76 "Instrument Serif",Georgia,serif; letter-spacing:-.04em; }
-.salon-intro h1 em { color:var(--wine); }
-.salon-intro p { width:min(100%,302px); font-size:16px; line-height:1.65; color:#54423b; margin:26px 0 9px; }
+.salon-intro h1 {
+  font:600 clamp(5rem,9vw,8.25rem)/.94 var(--classic-title);
+  letter-spacing:-.012em;
+  text-transform:uppercase;
+}
+.salon-intro h1 em { font-style:normal; }
+.salon-intro p { max-width:34ch; font-size:clamp(1rem,1.25vw,1.125rem); line-height:1.5; text-wrap:pretty; color:#54423b; margin:22px 0 9px; }
 .salon-preview { display:flex; gap:9px; align-items:center; font-size:14px; min-height:44px; border-bottom:1px solid #8b6b65; }
 .salon-preview:hover { color:#8e3f4e; }
 .salon-art { overflow:hidden; background:#403128; margin:0; }
@@ -1205,7 +1220,7 @@ button:disabled {
 .salon-preview-dialog video { width:100%; margin-top:12px; }
 .salon-room { --coral:#e6c290; --night:#151212; --paper:#f9efdf; --rule:#b49c7437; padding-bottom:94px; }
 .salon-room .night-room-header,.salon-room .night-dock { background:#201919; }
-.salon-room .night-room-title h1,.salon-room .watch-heading h2 { font:400 clamp(25px,4vw,42px)/.95 "Instrument Serif",Georgia,serif; }
+.salon-room .night-room-title h1,.salon-room .watch-heading h2 { font:600 clamp(1.65rem,3vw,2.5rem)/1.08 var(--classic-title); letter-spacing:0; }
 .salon-room .cinema-workspace { max-width:1350px; }
 .salon-room .cinema-layout { grid-template-columns:minmax(0,1fr); }
 .salon-room .watch-player,.salon-room .call-tile { background:#211b1a; border-radius:3px; }
@@ -1222,7 +1237,7 @@ button:disabled {
   height:min(530px,66dvh); border:1px solid #866b54; border-radius:14px; animation:salon-arrive .24s both;
 }
 .salon-drawer-heading { display:flex; align-items:center; justify-content:space-between; padding:5px 13px 5px 16px; }
-.salon-drawer-heading h2 { font:400 29px "Instrument Serif",Georgia,serif; }
+.salon-drawer-heading h2 { font:600 1.8rem/1.1 var(--classic-title); }
 .salon-drawer-heading button { display:grid; place-items:center; width:44px; height:44px; }
 @media(min-width:1024px) {
   .salon-room .night-dock { position:fixed; top:auto; bottom:14px; left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 24px); border:1px solid var(--rule); border-radius:14px; }
@@ -1230,8 +1245,7 @@ button:disabled {
 @media(max-width:720px) {
   .salon-nav { min-height:58px; }
   .salon-hero { grid-template-columns:minmax(0,1fr); gap:18px; padding-block:20px; }
-  .salon-intro h1 { font-size:clamp(65px,17vw,110px); }
-  .salon-intro p { margin:16px 0 2px; font-size:14px; line-height:1.5; }
+  .salon-intro p { margin:16px 0 4px; }
   .salon-art img { height:clamp(140px,44vw,260px); }
   .salon-booking form { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
   .salon-submit { grid-column:1/-1; }
@@ -1260,5 +1274,5 @@ button:disabled {
   .salon-hero { min-height:clamp(320px,93vw,425px); padding:19px; }
   .salon-hero::before { background-position:59% 62%; }
   .salon-hero::after { background:linear-gradient(0deg,#1c0d0cee,#1c0d0c60 68%,transparent); }
-  .salon-intro h1 { font-size:clamp(64px,17vw,105px); }
+  .salon-intro h1 { font-size:clamp(3rem,18vw,6.25rem); }
 }
