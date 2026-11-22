@@ -127,6 +127,7 @@ export function RemoteScreenShare({
               </button>
               <input
                 type="range"
+                aria-label="Shared sound volume"
                 min="0"
                 max="1"
                 step="0.05"

@@ -71,7 +71,10 @@ for (const classic of [false, true]) {
       const sound = guest.getByLabel(classic ? 'Shared screen' : 'Shared screen audio', {exact:true});
       await expect.poll(() => receivedFilmTone(sound), {timeout:15000}).toBe(true);
       await page.getByRole('button', {name:classic ? 'Voice only' : 'Mic',exact:true}).click();
-      await page.getByRole('button', {name:'Mic',exact:true}).click();
+      const microphone = page.getByRole('button', {name:'Mic',exact:true});
+      await expect(microphone).toHaveAttribute('aria-pressed', 'true');
+      await microphone.click();
+      await expect(page.getByRole('button', {name:classic ? 'Muted' : 'Mic',exact:true})).toHaveAttribute('aria-pressed', 'false');
       await expect.poll(() => receivedFilmTone(sound), {timeout:10000}).toBe(true);
       const stop = classic ? page.getByRole('button',{name:'Stop share',exact:true}) : share;
       await stop.click();
