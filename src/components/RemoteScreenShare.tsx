@@ -1,3 +1,4 @@
+import { screenSoundHint } from "../shared/displayMedia";
 import React, { useEffect, useRef, useState } from 'react';
 import { Monitor, Maximize, Minimize, Volume2, VolumeX, StopCircle, Radio } from 'lucide-react';
 
@@ -21,107 +22,54 @@ export function RemoteScreenShare({
   const [volume, setVolume] = useState(1);
   const [resolution, setResolution] = useState<{ width: number; height: number } | null>(null);
   const [hasAudio, setHasAudio] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    if (!stream) {
-      video.srcObject = null;
-      setResolution(null);
-      setHasAudio(false);
-      setIsPlaying(false);
-      return;
-    }
-
-    console.log(
-      `[REMOTE SCREEN SHARE]\n` +
-      `stream attached: id=${stream.id}\n` +
-      `videoTracks=${stream.getVideoTracks().length}\n` +
-      `audioTracks=${stream.getAudioTracks().length}\n` +
-      `isLocal=${isLocal}`
-    );
-
-    const vTracks = stream.getVideoTracks();
-    const aTracks = stream.getAudioTracks();
-    setHasAudio(aTracks.length > 0);
-
-    // Diagnostics for remote screen share tracks
-    vTracks.forEach((track) => {
-      console.log(
-        `[REMOTE SCREEN SHARE]\n` +
-        `ontrack\n` +
-        `track.kind: ${track.kind}\n` +
-        `track.id: ${track.id}\n` +
-        `stream.id: ${stream.id}\n` +
-        `readyState: ${track.readyState}`
-      );
-
-      track.onunmute = () => {
-        console.log(`[REMOTE SCREEN SHARE] onunmute: track.kind=${track.kind} track.id=${track.id} readyState=${track.readyState}`);
-      };
-    });
-
-    aTracks.forEach((track) => {
-      console.log(
-        `[REMOTE SCREEN SHARE]\n` +
-        `ontrack\n` +
-        `track.kind: ${track.kind}\n` +
-        `track.id: ${track.id}\n` +
-        `stream.id: ${stream.id}\n` +
-        `readyState: ${track.readyState}`
-      );
-
-      track.onunmute = () => {
-        console.log(`[REMOTE SCREEN SHARE] audio onunmute: track.kind=${track.kind} track.id=${track.id}`);
-      };
-    });
-
+    let active = true;
+    const tracks = stream?.getAudioTracks() ?? [];
+    const updateAudio = () => setHasAudio(tracks.some(track => track.readyState === 'live'));
+    const updateSize = () => {
+      if (video.videoWidth) setResolution({ width: video.videoWidth, height: video.videoHeight });
+    };
+    updateAudio();
+    setResolution(null);
+    setBlocked(false);
+    tracks.forEach(track => track.addEventListener('ended', updateAudio));
+    video.addEventListener('resize', updateSize);
     video.srcObject = stream;
-    video.muted = isLocal || isMuted;
-
-    const onLoadedMetadata = () => {
-      if (video.videoWidth && video.videoHeight) {
-        setResolution({ width: video.videoWidth, height: video.videoHeight });
-      }
-      video
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => {
-          console.warn('[SCREEN SHARE PLAY ERROR]', err);
-          // If autoplay blocked, mute and retry
-          video.muted = true;
-          video.play().then(() => setIsPlaying(true)).catch(() => {});
-        });
-    };
-
-    const onResize = () => {
-      if (video.videoWidth && video.videoHeight) {
-        setResolution({ width: video.videoWidth, height: video.videoHeight });
-      }
-    };
-
-    video.addEventListener('loadedmetadata', onLoadedMetadata);
-    video.addEventListener('resize', onResize);
-
-    // If metadata already loaded
-    if (video.readyState >= 1) {
-      onLoadedMetadata();
+    if (stream) {
+      video.muted = isLocal || isMuted;
+      void video.play().catch(() => {
+        if (!active || isLocal || isMuted) return;
+        video.muted = true;
+        setBlocked(true);
+        void video.play().catch(() => {});
+      });
     }
-
     return () => {
-      video.removeEventListener('loadedmetadata', onLoadedMetadata);
-      video.removeEventListener('resize', onResize);
+      active = false;
+      tracks.forEach(track => track.removeEventListener('ended', updateAudio));
+      video.removeEventListener('resize', updateSize);
+      video.srcObject = null;
     };
-  }, [stream, isLocal]);
+  }, [stream, isLocal, isMuted]);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isLocal ? true : isMuted;
-      videoRef.current.volume = volume;
-    }
-  }, [isMuted, volume, isLocal]);
+    if (videoRef.current) videoRef.current.volume = volume;
+  }, [volume]);
+
+  function enableSound() {
+    const video = videoRef.current;
+    if (!video || isLocal) return;
+    video.muted = false;
+    setIsMuted(false);
+    void video.play().then(() => setBlocked(false)).catch(() => {
+      video.muted = true;
+      setBlocked(true);
+    });
+  }
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -167,11 +115,11 @@ export function RemoteScreenShare({
           {!isLocal && hasAudio && (
             <div className="flex items-center gap-1.5 bg-black/60 border border-white/10 px-2 py-1 rounded-lg backdrop-blur-md">
               <button
-                onClick={() => setIsMuted(!isMuted)}
+                onClick={() => isMuted || blocked ? enableSound() : setIsMuted(true)}
                 className="text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                title={isMuted ? 'Unmute Screen Audio' : 'Mute Screen Audio'}
+                title={isMuted || blocked ? 'Enable shared sound' : 'Mute shared sound'}
               >
-                {isMuted ? (
+                {isMuted || blocked ? (
                   <VolumeX className="w-3.5 h-3.5 text-rose-400" />
                 ) : (
                   <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -219,9 +167,10 @@ export function RemoteScreenShare({
       <div className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden min-h-[300px]">
         <video
           ref={videoRef}
+          aria-label="Shared screen"
           autoPlay
           playsInline
-          muted={isLocal || isMuted}
+          muted={isLocal || isMuted || blocked}
           className="w-full h-full object-contain max-h-[80vh]"
         />
 
@@ -246,8 +195,8 @@ export function RemoteScreenShare({
           </span>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-zinc-500 font-mono">
-          <span>WebRTC Media Plane</span>
-          <span>{hasAudio ? 'Audio: Synced' : 'Audio: Display Only'}</span>
+          {blocked && hasAudio && <button onClick={enableSound}>Enable shared sound</button>}
+          <span>{hasAudio ? 'Shared sound available' : isLocal ? screenSoundHint : 'Video only'}</span>
         </div>
       </div>
     </div>

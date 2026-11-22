@@ -3,6 +3,7 @@ import type { FormEvent, PointerEvent } from "react";
 import { ArrowDownRight, ArrowLeft, ArrowRight, AudioLines, BookOpen, Check, CircleHelp, Clapperboard, Copy, DoorOpen, Hand, Heart, LayoutGrid, Mic, MicOff, Monitor, Plus, Send, Video, VideoOff, StickyNote, X } from "lucide-react";
 import { capacity, modes, roomReactions, type Member, type Mode, type NoteKind, type RoomDocument } from "./protocol";
 import { readLocal, useRoom, writeLocal } from "./useRoom";
+import { screenSoundHint } from "../shared/displayMedia";
 import { Screen, stamp } from "./Screen";
 import { Whiteboard } from "./Whiteboard";
 import { RoomPeople } from "./RoomPeople";
@@ -40,8 +41,8 @@ function resetPointer(event: PointerEvent<HTMLElement>) {
   event.currentTarget.style.removeProperty("--pointer-y");
 }
 
-function Player({ stream, muted = false, label, audioOnly = false }: {
-  stream?: MediaStream; muted?: boolean; label?: string; audioOnly?: boolean;
+function Player({ stream, muted = false, label, audioOnly = false, enableLabel = "Enable room audio" }: {
+  stream?: MediaStream; muted?: boolean; label?: string; audioOnly?: boolean; enableLabel?: string;
 }) {
   const element = useRef<HTMLMediaElement | null>(null);
   const [blocked, setBlocked] = useState(false);
@@ -54,8 +55,8 @@ function Player({ stream, muted = false, label, audioOnly = false }: {
     return () => { active = false; target.srcObject = null; };
   }, [stream, muted, audioOnly]);
   return <>
-    {audioOnly ? <audio ref={node => { element.current = node; }} autoPlay/> : <video ref={node => { element.current = node; }} autoPlay muted={muted} playsInline aria-label={label}/>}
-    {blocked && stream && <button className="space-button resume-audio" onClick={() => { void element.current?.play().then(() => setBlocked(false)).catch(() => {}); }}>Enable room audio</button>}
+    {audioOnly ? <audio ref={node => { element.current = node; }} autoPlay aria-label={label}/> : <video ref={node => { element.current = node; }} autoPlay muted={muted} playsInline aria-label={label}/>}
+    {blocked && stream && <button className="space-button resume-audio" onClick={() => { void element.current?.play().then(() => setBlocked(false)).catch(() => {}); }}>{enableLabel}</button>}
   </>;
 }
 
@@ -240,11 +241,13 @@ export default function Spaces() {
             r.send({type:"pointer",surface:"screen",page:space.page,x:Math.max(0,Math.min(1600,(event.clientX-bounds.left)/bounds.width*1600)),y:Math.max(0,Math.min(1000,(event.clientY-bounds.top)/bounds.height*1000))});
           }}>
             <Player stream={presenter.id === r.id ? ownScreen : r.remote[presenter.id]?.screen} muted label={`Screen shared by ${presenter.name}`}/>
-            <span>{presenter.name} is sharing</span>
+            {presenter.id !== r.id && presenter.screenAudio && <Player stream={r.remote[presenter.id]?.screen} audioOnly label="Shared screen audio" enableLabel="Enable shared sound"/>}
+            <span>{presenter.name} is sharing · {presenter.screenAudio ? "Sound on" : "Video only"}</span>
             <svg className="presentation-pointers" viewBox="0 0 1600 1000" preserveAspectRatio="none" aria-hidden="true">
               {r.pointers.filter(pointer=>pointer.surface==="screen").map(pointer=><g key={pointer.id} transform={`translate(${pointer.x} ${pointer.y})`}><circle r="13" fill="#efb267"/><text x="20" y="-12" fill="#fff3dd" fontSize="24">{pointer.name}</text></g>)}
             </svg>
           </div>}
+          {presenter?.id === r.id && !presenter?.screenAudio && <p className="space-pilot-note">{screenSoundHint}</p>}
           {presenter&&<div className="presentation-tools">
             <button className="space-button" aria-pressed={focus} onClick={()=>setFocus(!focus)}>Focus presentation</button>
             {(host||presenter.id===r.id)&&<button className="space-button" aria-label="Shared presentation pointer" aria-pressed={screenPointer} onClick={()=>setScreenPointer(!screenPointer)}>Shared pointer</button>}

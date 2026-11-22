@@ -101,6 +101,7 @@ export interface ScreenShareStartedMessage extends BaseSignalingMessage {
   ownerName?: string;
   screenStreamId?: string;
   screenTrackId?: string;
+  hasScreenAudio?: boolean;
 }
 
 export interface ScreenShareStoppedMessage extends BaseSignalingMessage {

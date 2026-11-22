@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RoomMedia } from "./mesh";
+import { captureDisplay } from "../shared/displayMedia";
+import { RoomMedia, type MediaSlot } from "./mesh";
 import type { AvatarProfile, RoomEvent, RoomPointer, RoomRequest, Space } from "./protocol";
 import { cacheRoom } from "./cache";
 import { validAvatar } from "./documents";
@@ -28,13 +29,13 @@ export function useRoom() {
   const [versionHistory,setHistory]=useState<{version:number;at:number}[]>([]);
   const [saving,setSaving]=useState(false);
   const [deviceBackup,setDeviceBackup]=useState(false);
-  const [local, setLocal] = useState<Partial<Record<Slot, MediaStreamTrack>>>({});
+  const [local, setLocal] = useState<Partial<Record<MediaSlot, MediaStreamTrack>>>({});
   const socket = useRef<WebSocket | null>(null);
   const pendingInk=useRef(new Set<string>());
   const lastEntry=useRef<Entry|null>(null);
   const boardRevision=useRef<number|undefined>(undefined);
   const media = useRef<RoomMedia | null>(null);
-  const devices = useRef<Partial<Record<Slot, MediaStreamTrack>>>({});
+  const devices = useRef<Partial<Record<MediaSlot, MediaStreamTrack>>>({});
   const busy = useRef(new Set<Slot>());
   const present = useRef(false);
   const fail = useCallback((message: string) => setError(message), []);
@@ -47,12 +48,17 @@ export function useRoom() {
     return true;
   }, []);
 
-  const setTrack = useCallback((slot: Slot, track?: MediaStreamTrack) => {
+  const setTrack = useCallback((slot: MediaSlot, track?: MediaStreamTrack) => {
     devices.current[slot]?.stop();
     devices.current = { ...devices.current, [slot]: track };
     void media.current?.setTrack(slot, track);
     setLocal(devices.current);
   }, []);
+  const clearPresentation = useCallback(() => {
+    present.current = false;
+    setTrack("screenAudio");
+    setTrack("screen");
+  }, [setTrack]);
   const stopTracks = useCallback(() => {
     for (const track of Object.values(devices.current)) track?.stop();
     devices.current = {};
@@ -174,8 +180,7 @@ export function useRoom() {
               setSpace(null);
               setEntry(null);
             } else if (message.action === "present" && present.current) {
-              present.current = false;
-              setTrack("screen");
+              clearPresentation();
             }
             break;
         }
@@ -210,11 +215,12 @@ export function useRoom() {
       setOnline(false);
       setReactions([]);
     };
-  }, [entry, fail, send, setTrack, stopTracks]);
+  }, [entry, fail, send, clearPresentation, stopTracks]);
 
   useEffect(() => {
     if (!present.current || !space || !id || space.presenter !== id || !devices.current.screen) return;
     void media.current?.setTrack("screen", devices.current.screen);
+    void media.current?.setTrack("screenAudio", devices.current.screenAudio);
   }, [space?.presenter, id]);
 
   function leave() {
@@ -232,11 +238,13 @@ export function useRoom() {
       return;
     }
     if (devices.current[slot]) {
-      setTrack(slot);
       if (slot === "screen") {
-        present.current = false;
+        clearPresentation();
         send({ type: "present", value: false });
-      } else send({ type: "devices", audio: !!devices.current.audio, video: !!devices.current.camera });
+      } else {
+        setTrack(slot);
+        send({ type: "devices", audio: !!devices.current.audio, video: !!devices.current.camera });
+      }
       return;
     }
     const activeSocket = socket.current;
@@ -244,11 +252,11 @@ export function useRoom() {
     setError("");
     try {
       const stream = slot === "screen"
-        ? await navigator.mediaDevices.getDisplayMedia({ video: { width: { max: 1280 }, height: { max: 720 }, frameRate: { max: 15 } }, audio: false })
+        ? await captureDisplay({ width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24 } })
         : await navigator.mediaDevices.getUserMedia(slot === "camera"
           ? { video: {deviceId:readLocal("bbtv.camera")?{ideal:readLocal("bbtv.camera")}:undefined,width: { ideal: 640, max: 960 }, frameRate: { max: 24 } }, audio: false }
           : { audio: {deviceId:readLocal("bbtv.microphone")?{ideal:readLocal("bbtv.microphone")}:undefined}, video: false });
-      const track = stream.getTracks()[0];
+      const track = slot === "audio" ? stream.getAudioTracks()[0] : stream.getVideoTracks()[0];
       if (!track || activeSocket !== socket.current || activeSocket?.readyState !== WebSocket.OPEN) {
         stream.getTracks().forEach(item => item.stop());
         return;
@@ -256,20 +264,28 @@ export function useRoom() {
       if (slot === "screen") {
         // Wait for the server to grant the shared screen before transmitting.
         present.current = true;
-        devices.current = { ...devices.current, screen: track };
+        const screenAudio = stream.getAudioTracks()[0];
+        devices.current = { ...devices.current, screen: track, screenAudio };
+        screenAudio?.addEventListener("ended", () => {
+          if (devices.current.screenAudio !== screenAudio) return;
+          setTrack("screenAudio");
+          send({ type: "present", value: true, audio: false });
+        });
         setLocal(devices.current);
-        send({ type: "present", value: true });
+        send({ type: "present", value: true, audio: !!screenAudio });
       } else {
         setTrack(slot, track);
         send({ type: "devices", audio: !!devices.current.audio, video: !!devices.current.camera });
       }
       track.addEventListener("ended", () => {
         if (devices.current[slot] !== track) return;
-        setTrack(slot);
         if (slot === "screen") {
-          present.current = false;
+          clearPresentation();
           send({ type: "present", value: false });
-        } else send({ type: "devices", audio: !!devices.current.audio, video: !!devices.current.camera });
+        } else {
+          setTrack(slot);
+          send({ type: "devices", audio: !!devices.current.audio, video: !!devices.current.camera });
+        }
       });
     } catch {
       setError(slot === "screen" ? "Screen sharing wasn’t started. Try a supported desktop browser." : "BBTV couldn’t access that device. Check the browser’s permissions.");

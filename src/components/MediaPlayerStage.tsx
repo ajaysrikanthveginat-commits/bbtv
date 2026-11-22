@@ -79,11 +79,11 @@ export function MediaPlayerStage({
           stream={
             screenShareOwner === "local"
               ? screenStream
-              : remoteScreenStream || remoteStream
+              : remoteScreenStream
           }
           ownerName={screenShareOwner === "local" ? "You" : remoteUserName}
           isLocal={screenShareOwner === "local"}
-          onStopSharing={onStopScreenShare}
+          onStopSharing={screenShareOwner === "local" ? onStopScreenShare : undefined}
         />
       ) : (
         <WatchTogetherPlayer

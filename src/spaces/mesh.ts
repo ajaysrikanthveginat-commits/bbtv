@@ -1,8 +1,8 @@
 import type { MediaSignal, Member } from "./protocol";
 
-type Slot = "audio" | "camera" | "screen";
+export type MediaSlot = "audio" | "camera" | "screen" | "screenAudio";
 type Media = { call: MediaStream; screen: MediaStream };
-const slots: Slot[] = ["audio", "camera", "screen"];
+const slots: MediaSlot[] = ["audio", "camera", "screen", "screenAudio"];
 
 interface Peer {
   pc: RTCPeerConnection;
@@ -14,7 +14,7 @@ interface Peer {
 
 export class RoomMedia {
   private peers = new Map<string, Peer>();
-  private tracks: Partial<Record<Slot, MediaStreamTrack>> = {};
+  private tracks: Partial<Record<MediaSlot, MediaStreamTrack>> = {};
 
   constructor(
     private own: string,
@@ -56,7 +56,7 @@ export class RoomMedia {
     const screen = new MediaStream();
     pc.ontrack = event => {
       const index = pc.getTransceivers().indexOf(event.transceiver);
-      (index === 2 ? screen : call).addTrack(event.track);
+      (slots[index] === "screen" || slots[index] === "screenAudio" ? screen : call).addTrack(event.track);
       this.onMedia(id, { call: new MediaStream(call.getTracks()), screen: new MediaStream(screen.getTracks()) });
     };
     pc.onicecandidate = event => { if (event.candidate) this.send(id, { candidate: event.candidate.toJSON() }); };
@@ -75,7 +75,7 @@ export class RoomMedia {
       }
     };
     if (peer.initiator) {
-      for (const slot of slots) pc.addTransceiver(slot === "audio" ? "audio" : "video", { direction: "sendrecv" });
+      for (const slot of slots) pc.addTransceiver(slot === "audio" || slot === "screenAudio" ? "audio" : "video", { direction: "sendrecv" });
       this.offer(id, peer);
     }
     return peer;
@@ -124,7 +124,7 @@ export class RoomMedia {
     }));
   }
 
-  setTrack(slot: Slot, track?: MediaStreamTrack) {
+  setTrack(slot: MediaSlot, track?: MediaStreamTrack) {
     this.tracks[slot] = track;
     return Promise.all([...this.peers.values()].map(peer => this.enqueue(peer, () => this.attach(peer))));
   }
