@@ -72,7 +72,7 @@ export function ChangeMediaModal({
         </button>
         <button
           className="media-option"
-          disabled={!isHost && !isScreenSharing}
+          disabled={!isHost}
           onClick={() => {
             if (isScreenSharing) onStopScreenShare?.();
             else onStartScreenShare?.();

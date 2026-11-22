@@ -369,7 +369,8 @@ export function roomSockets(app?: Express) {
             if (typeof action.value !== "boolean") return;
             if (action.value && room.presenter && room.presenter !== actor.id) throw new Error("Someone is already sharing. Try again when they stop.");
             if (!action.value && room.presenter !== actor.id) return;
-            if (action.value) resetPlayback(room);
+            if (action.value && !room.presenter) resetPlayback(room);
+            actor.screenAudio = action.value && action.audio === true;
             room.presenter = action.value ? actor.id : "";
             break;
           case "watch":

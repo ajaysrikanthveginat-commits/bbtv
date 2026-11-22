@@ -38,6 +38,7 @@ export interface Member {
   audio: boolean;
   video: boolean;
   avatar?: AvatarProfile;
+  screenAudio?: boolean;
 }
 
 export interface Note {
@@ -102,7 +103,7 @@ export type RoomRequest =
   | { type: "pointer"; x: number; y: number; surface: "board" | "screen"; page: string }
   | { type: "hand"; value: boolean }
   | { type: "devices"; audio: boolean; video: boolean }
-  | { type: "present"; value: boolean }
+  | { type: "present"; value: boolean; audio?: boolean }
   | { type: "chat"; text: string }
   | { type: "reaction"; emoji?: typeof roomReactions[number]; expression?: AvatarProfile["expression"] }
   | { type: "watch"; action: WatchAction }

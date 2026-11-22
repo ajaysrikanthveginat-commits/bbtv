@@ -59,7 +59,7 @@ Open `/` or `/spaces` to create a reusable four-seat room. Study opens a handwri
 
 Use Node 24. Run `npm ci` and `npm run dev`, or `npm run build && npm start`. Run `npm run test:integration` for the WebSocket and restart tests, and `npm run test:browser` with Chromium installed for the complete room flows.
 
-For a durable deployment, set `BBTV_DATABASE` to an absolute SQLite file path on a persistent volume. The default `./data/spaces.sqlite` persists on the same filesystem, which may be replaced during a hosted deployment. The pilot runs as a single application instance. Configure `BBTV_TURN_URL`, `BBTV_TURN_USER`, and `BBTV_TURN_PASSWORD` on a trusted pilot deployment for networks that require relaying. Screen sharing sends video plus the existing microphone track, without capturing system audio.
+For a durable deployment, set `BBTV_DATABASE` to an absolute SQLite file path on a persistent volume. The default `./data/spaces.sqlite` persists on the same filesystem, which may be replaced during a hosted deployment. The pilot runs as a single application instance. Configure `BBTV_TURN_URL`, `BBTV_TURN_USER`, and `BBTV_TURN_PASSWORD` on a trusted pilot deployment for networks that require relaying. Screen sharing sends the browser-provided display audio separately from the microphone. For movie sound, choose the video’s tab and enable tab audio in the browser picker. Sources without audio remain available as video-only presentations.
 
 Keep the invite URL within the group. Its random ID is the capability required to read or join the room. The room owner's credential is separate and remains in their browser. The host can change activities and moderate questions. If the owner is away, the first connected participant coordinates the live session.
 

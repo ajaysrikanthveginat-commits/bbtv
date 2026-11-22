@@ -1,3 +1,5 @@
+import { captureDisplay } from "../shared/displayMedia";
+
 export interface WebRTCEventCallbacks {
   onRemoteStream: (stream: MediaStream) => void;
   onRemoteScreenStream?: (stream: MediaStream | null) => void;
@@ -17,7 +19,8 @@ export class WebRTCManager {
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream = new MediaStream();
   private remoteScreenStream: MediaStream = new MediaStream();
-  private screenSender: RTCRtpSender | null = null;
+  private remoteScreenHasAudio = false;
+  private captureVersion = 0;
   private remoteScreenStreamId: string | null = null;
   private remoteScreenTrackId: string | null = null;
   private pendingCandidates: RTCIceCandidateInit[] = [];
@@ -28,9 +31,6 @@ export class WebRTCManager {
   private role: 'host' | 'participant' | 'none' = 'none';
   private isMakingOffer = false;
   private screenStream: MediaStream | null = null;
-  private originalCameraTrack: MediaStreamTrack | null = null;
-  private originalMicTrack: MediaStreamTrack | null = null;
-  private audioContext: AudioContext | null = null;
   private isRemoteScreenSharing = false;
   private statsTimer: number | null = null;
 
@@ -95,7 +95,6 @@ export class WebRTCManager {
     this.pc = pc;
     this.remoteStream = new MediaStream();
     this.remoteScreenStream = new MediaStream();
-    this.screenSender = null;
 
     // SECTION 7 & 8: Pre-configure bidirectional audio and video transceivers
     // Both peers need to send and receive media.
@@ -103,6 +102,9 @@ export class WebRTCManager {
       if (!answering) {
         pc.addTransceiver('audio', { direction: 'sendrecv' });
         pc.addTransceiver('video', { direction: 'sendrecv' });
+        // Separate senders keep microphone/camera updates independent of the presentation.
+        pc.addTransceiver('video', { direction: 'sendrecv' });
+        pc.addTransceiver('audio', { direction: 'sendrecv' });
       }
       this.callbacks.onLog(`Configured default transceivers (audio & video: sendrecv)`, 'info');
     } catch (err: any) {
@@ -217,12 +219,9 @@ export class WebRTCManager {
         );
       }
 
-      // Screen sharing is signaled before its offer. A camera can be streamless
-      // or move to a new stream after renegotiation, so stream changes alone
-      // must never cause a camera to be rendered as a screen share.
-      const isScreenTrack = track.kind === 'video' && this.isRemoteScreenSharing &&
-        (track.id === this.remoteScreenTrackId ||
-          streams.some((stream) => stream.id === this.remoteScreenStreamId));
+      const isScreenTrack = pc.getTransceivers().indexOf(transceiver) >= 2 ||
+        (this.isRemoteScreenSharing && (track.id === this.remoteScreenTrackId ||
+          streams.some(stream => stream.id === this.remoteScreenStreamId)));
 
       // Track frame delivery / unmute listeners
       track.onunmute = () => {
@@ -240,7 +239,7 @@ export class WebRTCManager {
           'success'
         );
         if (isScreenTrack) {
-          this.callbacks.onRemoteScreenStream?.(new MediaStream(this.remoteScreenStream.getTracks()));
+          this.publishRemoteScreen();
         } else {
           this.callbacks.onRemoteStream(new MediaStream(this.remoteStream.getTracks()));
         }
@@ -256,16 +255,14 @@ export class WebRTCManager {
         this.callbacks.onLog(`[TRACK ENDED] Remote ${track.kind} track ended: ${track.id.slice(0, 6)}`, 'info');
         if (isScreenTrack) {
           this.remoteScreenStream.removeTrack(track);
-          this.callbacks.onRemoteScreenStream?.(
-            this.remoteScreenStream.getTracks().length > 0 ? new MediaStream(this.remoteScreenStream.getTracks()) : null
-          );
+          this.publishRemoteScreen();
         }
       };
 
       if (isScreenTrack) {
         // Remove stale tracks on screen stream
-        this.remoteScreenStream.getVideoTracks().forEach((oldTrack) => {
-          if (oldTrack.id !== track.id) {
+        this.remoteScreenStream.getTracks().forEach((oldTrack) => {
+          if (oldTrack.kind === track.kind && oldTrack.id !== track.id) {
             this.remoteScreenStream.removeTrack(oldTrack);
           }
         });
@@ -276,7 +273,7 @@ export class WebRTCManager {
           `Remote screen track attached: ${track.id.slice(0, 8)} (${this.remoteScreenStream.getVideoTracks().length}V)`,
           'success'
         );
-        this.callbacks.onRemoteScreenStream?.(new MediaStream(this.remoteScreenStream.getTracks()));
+        this.publishRemoteScreen();
       } else {
         // If a new video track arrives (e.g. renegotiation when participant enables camera),
         // remove stale video tracks so the live camera track is always at index 0
@@ -424,8 +421,8 @@ export class WebRTCManager {
     const targetName = this.role === 'host' ? 'PARTICIPANT' : 'HOST';
 
     for (const track of this.localStream.getTracks()) {
-      const matches = pc.getTransceivers().filter(
-        (t) => t.sender !== this.screenSender && t.receiver.track.kind === track.kind,
+      const matches = pc.getTransceivers().slice(0, 2).filter(
+        (t) => t.receiver.track.kind === track.kind,
       );
       // Prefer negotiated media sections to unassigned transceivers.
       const transceiver = matches.find((t) => t.mid !== null) ?? matches[0];
@@ -599,19 +596,9 @@ export class WebRTCManager {
     try {
       this.callbacks.onLog(`[OFFER CREATE] Initiating offer as ${this.role.toUpperCase()}...`, 'info');
 
-      // Ensure all transceivers are set to appropriate directions
-      pc.getTransceivers().forEach((t) => {
-        if (this.screenSender && t.sender === this.screenSender) {
-          t.direction = 'sendonly';
-        } else {
-          t.direction = 'sendrecv';
-        }
-      });
-
-      // Attach any local tracks
-      if (this.localStream) {
-        await this.addLocalTracksToPC(pc);
-      }
+      for (const transceiver of pc.getTransceivers()) transceiver.direction = 'sendrecv';
+      await this.addLocalTracksToPC(pc);
+      await this.attachScreenTracks(pc);
 
       const offer = await pc.createOffer({
         offerToReceiveAudio: true,
@@ -670,24 +657,9 @@ export class WebRTCManager {
       // Process any queued candidates
       await this.drainPendingCandidates();
 
-      // Ensure transceivers are set to sendrecv so answer negotiates bidirectional media,
-      // but secondary video transceiver with no sender track stays recvonly
-      const offered = pc.getTransceivers().filter((t) => t.mid !== null);
-      const camera = offered.find((t) => t.receiver.track.kind === 'video');
-      offered.forEach((t) => {
-        if (this.screenSender && t.sender === this.screenSender) {
-          t.direction = 'sendonly';
-        } else if (!t.sender.track && t.receiver.track.kind === 'video' && t !== camera) {
-          t.direction = 'recvonly';
-        } else {
-          t.direction = 'sendrecv';
-        }
-      });
-
-      // If local stream exists, attach local tracks to senders before creating answer
-      if (this.localStream) {
-        await this.addLocalTracksToPC(pc);
-      }
+      for (const transceiver of pc.getTransceivers()) transceiver.direction = 'sendrecv';
+      await this.addLocalTracksToPC(pc);
+      await this.attachScreenTracks(pc);
 
       this.callbacks.onLog(`Creating WebRTC answer as ${this.role.toUpperCase()} (sendrecv)...`, 'info');
       const answer = await pc.createAnswer();
@@ -795,223 +767,69 @@ export class WebRTCManager {
     return audioTracks.length > 0;
   }
 
-  public setRemoteScreenSharing(active: boolean, screenStreamId?: string, screenTrackId?: string): void {
+  private publishRemoteScreen() {
+    if (!this.isRemoteScreenSharing) return;
+    const video = this.remoteScreenStream.getVideoTracks();
+    const audio = this.remoteScreenHasAudio ? this.remoteScreenStream.getAudioTracks() : [];
+    this.callbacks.onRemoteScreenStream?.(video.length ? new MediaStream([...video, ...audio]) : null);
+  }
+
+  public setRemoteScreenSharing(active: boolean, screenStreamId?: string, screenTrackId?: string, audio = false): void {
     this.isRemoteScreenSharing = active;
-    if (active) {
-      this.remoteScreenStreamId = screenStreamId || null;
-      this.remoteScreenTrackId = screenTrackId || null;
-    } else {
-      this.remoteScreenStreamId = null;
-      this.remoteScreenTrackId = null;
-      this.remoteScreenStream.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch (_) {}
-        this.remoteScreenStream.removeTrack(track);
-      });
-      this.callbacks.onRemoteScreenStream?.(null);
-    }
-    this.callbacks.onLog(`[SCREEN SHARE] Remote screen sharing status set to: ${active}`, 'info');
+    this.remoteScreenStreamId = screenStreamId || null;
+    this.remoteScreenTrackId = screenTrackId || null;
+    this.remoteScreenHasAudio = audio;
+    if (active) this.publishRemoteScreen();
+    else this.callbacks.onRemoteScreenStream?.(null);
   }
 
   public isRemoteScreenSharingActive(): boolean {
     return this.isRemoteScreenSharing;
   }
 
+  public getLocalScreenStream() {
+    return this.screenStream;
+  }
+
+  private async attachScreenTracks(pc: RTCPeerConnection) {
+    const presentation = pc.getTransceivers().slice(2, 4);
+    await Promise.all(presentation.map(({sender, receiver}) => {
+      const track = this.screenStream?.getTracks().find(item =>
+        item.kind === receiver.track.kind && item.readyState === 'live'
+      ) ?? null;
+      if (sender.track !== track) return sender.replaceTrack(track);
+    }));
+  }
+
   public async startScreenShare(): Promise<MediaStream> {
-    console.log('[SCREEN SHARE]\ncapture requested');
-    this.callbacks.onLog('[SCREEN SHARE] capture requested', 'info');
-
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
-    } catch (audioErr) {
-      console.warn('[SCREEN SHARE AUDIO] Audio capture unavailable or not supported; requesting video only', audioErr);
-      try {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: false,
-        });
-      } catch (err: any) {
-        this.callbacks.onLog(`[SCREEN SHARE] capture error: ${err.message || err}`, 'warn');
-        throw err;
-      }
+    const version = ++this.captureVersion;
+    const stream = await captureDisplay();
+    const video = stream.getVideoTracks()[0];
+    if (!video || version !== this.captureVersion) {
+      stream.getTracks().forEach(track => track.stop());
+      throw new DOMException('Screen sharing ended', 'AbortError');
     }
-
-    console.log('[SCREEN SHARE]\ncapture started');
-    this.callbacks.onLog('[SCREEN SHARE] capture started', 'success');
-
+    this.screenStream?.getTracks().forEach(track => track.stop());
     this.screenStream = stream;
-
-    const videoTracks = stream.getVideoTracks();
-    const screenVideoTrack = videoTracks[0];
-
-    if (screenVideoTrack) {
-      console.log(
-        `[SCREEN SHARE]\n` +
-        `video track:\n` +
-        `id: ${screenVideoTrack.id}\n` +
-        `kind: ${screenVideoTrack.kind}\n` +
-        `enabled: ${screenVideoTrack.enabled}\n` +
-        `readyState: ${screenVideoTrack.readyState}`
-      );
-      this.callbacks.onLog(
-        `[SCREEN SHARE] video track: id=${screenVideoTrack.id.slice(0, 8)} readyState=${screenVideoTrack.readyState}`,
-        'info'
-      );
+    video.onended = async () => {
+      if (this.screenStream !== stream) return;
+      await this.stopScreenShare();
+      this.callbacks.onScreenShareEnded?.();
+    };
+    try {
+      if (this.pc) await this.attachScreenTracks(this.pc);
+      return stream;
+    } catch (error) {
+      if (this.screenStream === stream) await this.stopScreenShare();
+      throw error;
     }
-
-    const audioTracks = stream.getAudioTracks();
-    const screenAudioTrack = audioTracks[0];
-
-    if (screenAudioTrack) {
-      console.log(
-        `[SCREEN SHARE]\n` +
-        `audio track:\n` +
-        `id: ${screenAudioTrack.id}\n` +
-        `kind: ${screenAudioTrack.kind}\n` +
-        `enabled: ${screenAudioTrack.enabled}\n` +
-        `readyState: ${screenAudioTrack.readyState}`
-      );
-      this.callbacks.onLog(
-        `[SCREEN SHARE] audio track: id=${screenAudioTrack.id.slice(0, 8)} readyState=${screenAudioTrack.readyState}`,
-        'info'
-      );
-    } else {
-      console.log('[SCREEN SHARE AUDIO]\nunavailable');
-      this.callbacks.onLog('[SCREEN SHARE AUDIO] unavailable', 'info');
-    }
-
-    // Attach native screen share stop listener (browser bar 'Stop sharing')
-    if (screenVideoTrack) {
-      screenVideoTrack.onended = async () => {
-        console.log('[SCREEN SHARE]\nended');
-        this.callbacks.onLog('[SCREEN SHARE] Screen share ended via browser native control', 'info');
-        await this.stopScreenShare();
-        if (this.callbacks.onScreenShareEnded) {
-          this.callbacks.onScreenShareEnded();
-        }
-      };
-    }
-
-    // Add dedicated screen video track to RTCPeerConnection (does NOT replace camera)
-    if (this.pc && screenVideoTrack) {
-      try {
-        this.screenSender = this.pc.addTrack(screenVideoTrack, stream);
-        this.callbacks.onLog(
-          `[SCREEN SHARE] Added dedicated screen video track: ${screenVideoTrack.id.slice(0, 8)}`,
-          'success'
-        );
-      } catch (err: any) {
-        console.warn('[ADD SCREEN TRACK ERROR]', err);
-        this.callbacks.onLog(`Failed to add screen track: ${err.message || err}`, 'warn');
-      }
-    }
-
-    // Handle screen audio mixing with microphone without breaking the microphone
-    if (screenAudioTrack && this.pc) {
-      try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        this.audioContext = audioCtx;
-        const dest = audioCtx.createMediaStreamDestination();
-
-        const micTrack = this.localStream?.getAudioTracks()[0];
-        if (micTrack && micTrack.readyState === 'live') {
-          const micSource = audioCtx.createMediaStreamSource(new MediaStream([micTrack]));
-          micSource.connect(dest);
-          this.originalMicTrack = micTrack;
-        }
-
-        const screenSource = audioCtx.createMediaStreamSource(new MediaStream([screenAudioTrack]));
-        screenSource.connect(dest);
-
-        const mixedAudioTrack = dest.stream.getAudioTracks()[0];
-        if (mixedAudioTrack) {
-          const senders = this.pc.getSenders();
-          let audioSender = senders.find((s) => s.track && s.track.kind === 'audio');
-          if (!audioSender) {
-            audioSender = senders.find((s) => {
-              const t = this.pc?.getTransceivers().find((tr) => tr.sender === s);
-              return t?.receiver.track.kind === 'audio';
-            });
-          }
-
-          if (audioSender) {
-            await audioSender.replaceTrack(mixedAudioTrack);
-            this.callbacks.onLog('[SCREEN SHARE] Mixed mic + screen audio attached to audio sender', 'success');
-          }
-        }
-      } catch (audioMixErr) {
-        console.warn('[SCREEN AUDIO MIXING FALLBACK]', audioMixErr);
-      }
-    }
-
-    this.logSenders();
-    return stream;
   }
 
   public async stopScreenShare(): Promise<void> {
-    if (this.screenStream) {
-      this.screenStream.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch (_) {}
-      });
-      this.screenStream = null;
-    }
-
-    // Remove dedicated screen track sender from peer connection without affecting camera
-    if (this.pc && this.screenSender) {
-      try {
-        this.pc.removeTrack(this.screenSender);
-        this.callbacks.onLog('[SCREEN SHARE] Removed screen track from peer connection', 'info');
-      } catch (err: any) {
-        console.warn('[REMOVE SCREEN TRACK ERROR]', err);
-      }
-      this.screenSender = null;
-    }
-
-    if (this.audioContext) {
-      try {
-        await this.audioContext.close();
-      } catch (_) {}
-      this.audioContext = null;
-    }
-
-    // Restore original mic track on audio sender if screen audio was mixed
-    if (this.pc) {
-      const senders = this.pc.getSenders();
-      let audioSender = senders.find((s) => s.track && s.track.kind === 'audio');
-      if (!audioSender) {
-        audioSender = senders.find((s) => {
-          const t = this.pc?.getTransceivers().find((tr) => tr.sender === s);
-          return t?.receiver.track.kind === 'audio';
-        });
-      }
-
-      const micTrack =
-        (this.originalMicTrack && this.originalMicTrack.readyState === 'live'
-          ? this.originalMicTrack
-          : this.localStream?.getAudioTracks()[0]) || null;
-
-      if (audioSender && micTrack) {
-        try {
-          await audioSender.replaceTrack(micTrack);
-          this.callbacks.onLog('[SCREEN SHARE] Restored microphone track on audio sender', 'info');
-        } catch (err: any) {
-          console.warn('[RESTORE MIC ERROR]', err);
-        }
-      }
-    }
-
-    this.originalCameraTrack = null;
-    this.originalMicTrack = null;
-    console.log('[SCREEN SHARE]\nended');
-    this.callbacks.onLog('[SCREEN SHARE] Screen share stopped', 'info');
-    this.logSenders();
+    ++this.captureVersion;
+    this.screenStream?.getTracks().forEach(track => track.stop());
+    this.screenStream = null;
+    if (this.pc) await this.attachScreenTracks(this.pc);
   }
 
   public startStatsMonitoring(): void {
@@ -1199,9 +1017,10 @@ export class WebRTCManager {
       track.stop();
       this.remoteScreenStream.removeTrack(track);
     });
-    this.screenSender = null;
     this.remoteScreenStreamId = null;
     this.remoteScreenTrackId = null;
+    this.isRemoteScreenSharing = false;
+    this.remoteScreenHasAudio = false;
   }
 
   public cleanupAll(): void {

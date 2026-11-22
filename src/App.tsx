@@ -245,7 +245,6 @@ export default function App() {
         setScreenShareOwner(null);
         setLocalScreenStream(null);
         const curRoom = roomIdRef.current;
-        const curRemote = remoteUserIdRef.current;
         if (signalingRef.current && curRoom) {
           signalingRef.current.send({
             type: 'SCREEN_SHARE_STOPPED',
@@ -253,18 +252,6 @@ export default function App() {
             senderId: uid,
             ownerRole: roleRef.current !== 'none' ? roleRef.current : undefined,
           });
-          if (curRemote) {
-            const offer = await webrtcRef.current?.createOffer();
-            if (offer && signalingRef.current) {
-              signalingRef.current.send({
-                type: 'OFFER',
-                roomId: curRoom,
-                senderId: uid,
-                targetId: curRemote,
-                payload: offer,
-              });
-            }
-          }
         }
         addLog('[SCREEN SHARE STOP] Screen share ended, camera/mic restored', 'info');
         addSystemMessage('Screen sharing ended.');
@@ -397,6 +384,12 @@ export default function App() {
           addLog(`Remote peer ${message.userId.slice(0, 8)} joined the room!`, 'success');
           addSystemMessage(`A friend joined the watch room!`);
 
+          const sharing = curWebRTC.getLocalScreenStream();
+          if (sharing && roleRef.current === 'host') {
+            signaling.send({ type: 'SCREEN_SHARE_STARTED', senderId: uid, roomId: message.roomId,
+              screenStreamId: sharing.id, screenTrackId: sharing.getVideoTracks()[0]?.id,
+              hasScreenAudio: sharing.getAudioTracks().some(track => track.readyState === 'live') });
+          }
           // If we are host, initiate the WebRTC Offer to the newly arrived participant
           addLog('Host initiating WebRTC offer to new participant...', 'info');
           const offer = await curWebRTC.createOffer();
@@ -419,6 +412,8 @@ export default function App() {
           addSystemMessage(`Remote friend left the room.`);
           remoteUserIdRef.current = null;
           setRemoteUserId(null);
+          await curWebRTC.stopScreenShare();
+          setLocalScreenStream(null);
           setRemoteStream(null);
           setRemoteScreenStream(null);
           setIsScreenSharing(false);
@@ -498,7 +493,7 @@ export default function App() {
           console.log(`[SCREEN SHARE] Remote peer ${message.senderId} started sharing screen`);
           setIsScreenSharing(true);
           setScreenShareOwner('remote');
-          curWebRTC.setRemoteScreenSharing(true, message.screenStreamId, message.screenTrackId);
+          curWebRTC.setRemoteScreenSharing(true, message.screenStreamId, message.screenTrackId, message.hasScreenAudio);
           setDiagnostics((prev) => ({
             ...prev,
             isScreenSharing: true,
@@ -689,7 +684,6 @@ export default function App() {
         setLocalScreenStream(stream);
 
         const currentRoom = roomIdRef.current || roomId;
-        const activeRemoteUser = remoteUserIdRef.current || remoteUserId;
         const screenVideoTrack = stream.getVideoTracks()[0];
         if (signalingRef.current && currentRoom) {
           signalingRef.current.send({
@@ -700,23 +694,9 @@ export default function App() {
             ownerName: displayName,
             screenStreamId: stream.id,
             screenTrackId: screenVideoTrack?.id,
+            hasScreenAudio: stream.getAudioTracks().some(track => track.readyState === "live"),
           });
 
-          // Renegotiate SDP with remote peer to establish second video track
-          if (activeRemoteUser) {
-            addLog(`Renegotiating WebRTC offer to transmit screen share to ${activeRemoteUser.slice(0, 8)}...`, 'info');
-            const offer = await webrtcRef.current?.createOffer();
-            if (offer && signalingRef.current) {
-              signalingRef.current.send({
-                type: 'OFFER',
-                roomId: currentRoom,
-                senderId: localUserId,
-                targetId: activeRemoteUser,
-                payload: offer,
-              });
-              addLog('Sent WebRTC OFFER with screen share track', 'success');
-            }
-          }
         }
 
         setDiagnostics((prev) => ({
@@ -748,7 +728,6 @@ export default function App() {
       setLocalScreenStream(null);
 
       const currentRoom = roomIdRef.current || roomId;
-      const activeRemoteUser = remoteUserIdRef.current || remoteUserId;
       if (signalingRef.current && currentRoom) {
         signalingRef.current.send({
           type: 'SCREEN_SHARE_STOPPED',
@@ -757,21 +736,6 @@ export default function App() {
           ownerRole: role !== 'none' ? role : undefined,
         });
 
-        // Renegotiate SDP removal of screen share track
-        if (activeRemoteUser) {
-          addLog('Renegotiating WebRTC offer after ending screen share...', 'info');
-          const offer = await webrtcRef.current?.createOffer();
-          if (offer && signalingRef.current) {
-            signalingRef.current.send({
-              type: 'OFFER',
-              roomId: currentRoom,
-              senderId: localUserId,
-              targetId: activeRemoteUser,
-              payload: offer,
-            });
-            addLog('Sent WebRTC OFFER after screen share stopped', 'info');
-          }
-        }
       }
 
       setDiagnostics((prev) => ({

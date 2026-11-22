@@ -147,7 +147,7 @@ export function WatchRoomTopBar(p: WatchRoomTopBarProps) {
           <Tv size={19} />
           Media
         </button>
-        {p.isScreenSharing ? (
+        {p.isHost && p.isScreenSharing ? (
           <button
             className="night-control danger"
             onClick={p.onStopScreenShare}
